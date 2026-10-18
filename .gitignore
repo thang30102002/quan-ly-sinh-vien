@@ -1,0 +1,17 @@
+# Maven
+target/
+
+# Java
+*.class
+*.log
+hs_err_pid*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+nbproject/private/
+
+# OS
+Thumbs.db
+.DS_Store
