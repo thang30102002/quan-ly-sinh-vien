@@ -5,8 +5,8 @@ Phần mềm desktop viết bằng Java để quản lý sinh viên, học phầ
 ## Chức năng
 
 - Thêm, sửa, xóa, tìm kiếm sinh viên
-- Quản lý học phần và học kỳ
-- Đăng ký / hủy học phần (tối đa 24 tín chỉ mỗi học kỳ)
+- Quản lý học phần, học kỳ và thời khóa biểu lớp học phần
+- Đăng ký / hủy học phần (tối đa 12 tín chỉ mỗi học kỳ, không trùng lịch học)
 - Nhập điểm theo lớp học phần
 - Tính GPA học kỳ, GPA tích lũy và xếp loại học lực
 - Thống kê, xuất bảng điểm
@@ -29,7 +29,7 @@ Phần mềm desktop viết bằng Java để quản lý sinh viên, học phầ
 database/                schema.sql, seed.sql
 docs/                    yêu cầu, sơ đồ, test case
 src/main/java/com/qlsv/
-├── model/               Student, Course, Semester, Enrollment
+├── model/               Student, Course, Semester, ClassSection, Schedule, Enrollment
 ├── dao/                 truy cập CSDL bằng JDBC
 ├── service/             quy tắc nghiệp vụ, GpaCalculator
 ├── controller/          xử lý sự kiện giao diện
@@ -65,7 +65,7 @@ Theo dõi tiến độ tại [Milestones](https://github.com/thang30102002/quan-
 | 2 | T2 26/10 | [#6 StudentService](https://github.com/thang30102002/quan-ly-sinh-vien/issues/6) |
 | 2 | T3 27/10 | [#7 Khung giao diện chính](https://github.com/thang30102002/quan-ly-sinh-vien/issues/7) |
 | 2 | T4 28/10 | [#8 Giao diện quản lý sinh viên](https://github.com/thang30102002/quan-ly-sinh-vien/issues/8) |
-| 2 | T5 29/10 | [#9 Quản lý học phần và học kỳ](https://github.com/thang30102002/quan-ly-sinh-vien/issues/9) |
+| 2 | T5 29/10 | [#9 Quản lý học phần, học kỳ và thời khóa biểu](https://github.com/thang30102002/quan-ly-sinh-vien/issues/9) |
 | 2 | T6 30/10 | [#10 Kiểm thử và refactor tuần 2](https://github.com/thang30102002/quan-ly-sinh-vien/issues/10) |
 | 3 | T2 02/11 | [#11 Logic đăng ký học phần](https://github.com/thang30102002/quan-ly-sinh-vien/issues/11) |
 | 3 | T3 03/11 | [#12 Giao diện đăng ký học phần](https://github.com/thang30102002/quan-ly-sinh-vien/issues/12) |
