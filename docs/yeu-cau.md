@@ -165,6 +165,10 @@ Ví dụ: CC = 9, GK = 7, CK = 6.5. Điểm tổng kết = 0.9 + 2.1 + 3.9 = **6
 
 Sơ đồ: [`use-case.png`](use-case.png) (file gốc để chỉnh sửa: [`use-case.drawio`](use-case.drawio)).
 
+![Sơ đồ use case](use-case.png)
+
+Trên sơ đồ, *Người dùng* là tác nhân trừu tượng. Giáo vụ và Giảng viên đều kế thừa từ Người dùng nên dùng được các use case nối với Người dùng. Giảng viên chỉ thao tác trên lớp học phần mình dạy.
+
 | Mã | Use case | Tác nhân | Issue |
 |---|---|---|---|
 | UC01 | Đăng nhập | Giáo vụ, Giảng viên | #18 |
