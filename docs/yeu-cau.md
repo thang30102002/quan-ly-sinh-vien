@@ -193,17 +193,18 @@ Trên sơ đồ, *Người dùng* là tác nhân trừu tượng. Giáo vụ và
 | UC03 | Tìm kiếm sinh viên | Giáo vụ, Giảng viên | #8 |
 | UC04 | Quản lý học phần | Giáo vụ | #9 |
 | UC05 | Quản lý học kỳ | Giáo vụ | #9 |
-| UC06 | Đăng ký học phần | Giáo vụ | #11, #12 |
-| UC07 | Hủy đăng ký học phần | Giáo vụ | #11, #12 |
+| UC06 | Đăng ký lớp học phần | Giáo vụ | #11, #12 |
+| UC07 | Hủy đăng ký lớp học phần | Giáo vụ | #11, #12 |
 | UC08 | Nhập điểm theo lớp học phần | Giáo vụ, Giảng viên | #14 |
 | UC09 | Xem GPA và bảng điểm cá nhân | Giáo vụ, Giảng viên | #13, #15 |
 | UC10 | Thống kê, báo cáo | Giáo vụ, Giảng viên | #16 |
 | UC11 | Xuất / nhập file | Giáo vụ, Giảng viên | #17 |
-| UC12 | Quản lý thời khóa biểu lớp học phần | Giáo vụ | #9 |
+| UC12 | Quản lý lớp học phần và thời khóa biểu (mở lớp, gán giảng viên, sĩ số, buổi học) | Giáo vụ | #9 |
 | UC13 | Xem thời khóa biểu | Giáo vụ, Giảng viên | #12 |
 
 Quan hệ giữa các use case:
-- UC06 *include* "Kiểm tra giới hạn 12 tín chỉ", "Kiểm tra trùng môn" và "Kiểm tra trùng lịch học".
+- UC06 *include* "Kiểm tra giới hạn 12 tín chỉ" (BR-04), "Kiểm tra trùng môn" (BR-05), "Kiểm tra trùng lịch học" (BR-22) và "Kiểm tra sĩ số lớp" (BR-25).
+- Điều kiện trước của UC06 và UC07: học kỳ đang mở đăng ký (BR-26); với UC06, sinh viên ở trạng thái *Đang học* (BR-07).
 - UC12 *include* "Kiểm tra trùng lịch học" (BR-23).
 - UC08 *include* "Tính điểm tổng kết và quy đổi".
 - UC11 *extend* UC09 (xuất bảng điểm cá nhân) và UC10 (xuất báo cáo).
