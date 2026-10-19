@@ -5,8 +5,8 @@ Phần mềm desktop viết bằng Java để quản lý sinh viên, học phầ
 ## Chức năng
 
 - Thêm, sửa, xóa, tìm kiếm sinh viên
-- Quản lý học phần và học kỳ
-- Đăng ký / hủy học phần (tối đa 24 tín chỉ mỗi học kỳ)
+- Quản lý học phần, học kỳ và thời khóa biểu lớp học phần
+- Đăng ký / hủy học phần (tối đa 12 tín chỉ mỗi học kỳ, không trùng lịch học)
 - Nhập điểm theo lớp học phần
 - Tính GPA học kỳ, GPA tích lũy và xếp loại học lực
 - Thống kê, xuất bảng điểm

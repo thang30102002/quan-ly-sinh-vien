@@ -6,16 +6,16 @@
 
 ## 1. Giới thiệu
 
-Phần mềm desktop (Java Swing + MySQL) cho phòng đào tạo của khoa/trường. Phần mềm dùng để quản lý hồ sơ sinh viên, học phần, học kỳ, đăng ký học phần, nhập điểm, tính GPA và lập báo cáo.
+Phần mềm desktop (Java Swing + MySQL) cho phòng đào tạo của khoa/trường. Phần mềm dùng để quản lý hồ sơ sinh viên, học phần, học kỳ, thời khóa biểu lớp học phần, đăng ký học phần, nhập điểm, tính GPA và lập báo cáo.
 
-Ngoài phạm vi: thu học phí, xếp thời khóa biểu/phòng học, cổng thông tin cho sinh viên tự đăng nhập, ứng dụng web/mobile.
+Ngoài phạm vi: thu học phí, tự động xếp thời khóa biểu (giáo vụ nhập lịch bằng tay), kiểm tra trùng phòng học hoặc trùng lịch dạy của giảng viên, cổng thông tin cho sinh viên tự đăng nhập, ứng dụng web/mobile.
 
 ## 2. Người dùng
 
 | Vai trò | Mô tả | Quyền chính |
 |---|---|---|
-| **Giáo vụ (Admin)** | Cán bộ phòng đào tạo, quản trị toàn bộ dữ liệu | Toàn quyền: quản lý sinh viên, học phần, học kỳ, đăng ký học phần; nhập/sửa điểm mọi lớp; thống kê; xuất/nhập file |
-| **Giảng viên** | Người dạy các lớp học phần | Xem danh sách sinh viên của lớp mình dạy; nhập/sửa điểm lớp mình dạy; xem bảng điểm, thống kê của lớp mình |
+| **Giáo vụ (Admin)** | Cán bộ phòng đào tạo, quản trị toàn bộ dữ liệu | Toàn quyền: quản lý sinh viên, học phần, học kỳ, thời khóa biểu, đăng ký học phần; nhập/sửa điểm mọi lớp; thống kê; xuất/nhập file |
+| **Giảng viên** | Người dạy các lớp học phần | Xem danh sách sinh viên của lớp mình dạy; xem lịch dạy của mình; nhập/sửa điểm lớp mình dạy; xem bảng điểm, thống kê của lớp mình |
 
 Bảng phân quyền chi tiết:
 
@@ -25,6 +25,8 @@ Bảng phân quyền chi tiết:
 | Thêm, sửa, xóa sinh viên | ✔ | |
 | Tìm kiếm, xem sinh viên | ✔ | ✔ (lớp mình dạy) |
 | Quản lý học phần, học kỳ | ✔ | |
+| Quản lý thời khóa biểu lớp học phần | ✔ | |
+| Xem thời khóa biểu | ✔ | ✔ (lịch dạy của mình) |
 | Đăng ký / hủy học phần cho sinh viên | ✔ | |
 | Nhập, sửa điểm | ✔ | ✔ (lớp mình dạy) |
 | Xem GPA, bảng điểm cá nhân | ✔ | ✔ (lớp mình dạy) |
@@ -41,14 +43,17 @@ Bảng phân quyền chi tiết:
 - Xóa sinh viên (có hỏi xác nhận, xem BR-14).
 - Tìm kiếm theo mã SV, họ tên (không phân biệt hoa thường, khớp một phần), lớp, khóa, trạng thái. Có sắp xếp và phân trang/cuộn bảng.
 
-### 3.2. Quản lý học phần và học kỳ
+### 3.2. Quản lý học phần, học kỳ và thời khóa biểu
 - Học phần: thêm, sửa, xóa, tìm kiếm. Thông tin gồm mã học phần, tên, số tín chỉ, mô tả.
 - Học kỳ: thêm, sửa, xóa. Thông tin gồm mã học kỳ, tên, ngày bắt đầu, ngày kết thúc.
-- Lớp học phần: mở một học phần trong một học kỳ và gán giảng viên phụ trách.
+- Lớp học phần: mở một học phần trong một học kỳ và gán giảng viên phụ trách. Một học phần có thể mở nhiều lớp trong cùng học kỳ.
+- Thời khóa biểu: mỗi lớp học phần có một hoặc nhiều buổi học lặp lại hằng tuần trong suốt học kỳ. Mỗi buổi gồm thứ (Thứ 2 – Chủ nhật), tiết bắt đầu, tiết kết thúc (tiết 1–12; tiết 1–6 buổi sáng, 7–12 buổi chiều) và phòng học. Giáo vụ thêm, sửa, xóa buổi học (xem mục 4.6).
+- Xem thời khóa biểu dạng lưới tuần (thứ × tiết) theo sinh viên, theo lớp học phần hoặc theo giảng viên.
 
 ### 3.3. Đăng ký / hủy học phần
-- Giáo vụ chọn sinh viên và học kỳ, rồi chọn các học phần được mở trong học kỳ đó để đăng ký.
-- Hiển thị tổng số tín chỉ đã đăng ký trong học kỳ và số tín chỉ còn được đăng ký.
+- Giáo vụ chọn sinh viên và học kỳ, rồi chọn các lớp học phần được mở trong học kỳ đó để đăng ký. Danh sách lớp hiển thị kèm lịch học.
+- Hiển thị tổng số tín chỉ đã đăng ký trong học kỳ, số tín chỉ còn được đăng ký và thời khóa biểu hiện tại của sinh viên.
+- Từ chối đăng ký nếu vượt 12 tín chỉ (BR-04), trùng môn (BR-05) hoặc trùng lịch (BR-22).
 - Hủy đăng ký (xem BR-15).
 
 ### 3.4. Nhập điểm và tính GPA
@@ -81,8 +86,8 @@ Phần mềm tự chuyển mã sang chữ in hoa và bỏ khoảng trắng hai �
 
 | Mã | Quy tắc |
 |---|---|
-| **BR-04** | Tổng số tín chỉ một sinh viên đăng ký trong một học kỳ **không vượt quá 24**. Đăng ký đúng 24 tín chỉ là hợp lệ; nếu học phần mới làm tổng vượt 24 thì từ chối. |
-| **BR-05** | Một sinh viên **không được đăng ký trùng một học phần trong cùng học kỳ**. |
+| **BR-04** | Tổng số tín chỉ một sinh viên đăng ký trong một học kỳ **không vượt quá 12**. Đăng ký đúng 12 tín chỉ là hợp lệ; nếu học phần mới làm tổng vượt 12 thì từ chối. |
+| **BR-05** | Một sinh viên **không được đăng ký trùng một học phần trong cùng học kỳ**, kể cả khi học phần đó mở nhiều lớp. |
 | **BR-06** | Được đăng ký lại một học phần ở học kỳ khác (học lại khi trượt, học cải thiện khi đã đạt). |
 | **BR-07** | Chỉ sinh viên có trạng thái *Đang học* mới được đăng ký học phần. |
 
@@ -103,7 +108,7 @@ Phần mềm tự chuyển mã sang chữ in hoa và bỏ khoảng trắng hai �
 |---|---|
 | **BR-14** | **Không xóa sinh viên đã có điểm.** Nếu sinh viên đã có ít nhất một điểm thành phần thì chỉ được chuyển trạng thái sang *Thôi học*. Sinh viên chưa có điểm thì được xóa; khi xóa thì xóa luôn các đăng ký của sinh viên đó. |
 | **BR-15** | **Không hủy đăng ký học phần khi đã có điểm.** Nếu đăng ký đã có ít nhất một điểm thành phần thì không được hủy. |
-| **BR-16** | Không xóa học phần hoặc học kỳ đã có sinh viên đăng ký. |
+| **BR-16** | Không xóa học phần, lớp học phần hoặc học kỳ đã có sinh viên đăng ký. |
 
 ### 4.5. Ràng buộc dữ liệu khác
 
@@ -114,10 +119,18 @@ Phần mềm tự chuyển mã sang chữ in hoa và bỏ khoảng trắng hai �
 | **BR-19** | Ngày kết thúc học kỳ phải sau ngày bắt đầu. |
 | **BR-20** | Trạng thái sinh viên là một trong các giá trị: *Đang học*, *Bảo lưu*, *Thôi học*, *Tốt nghiệp*. |
 
-### 4.6. Xử lý lỗi
-- Dữ liệu nhập sai định dạng hoặc thiếu (BR-01–03, BR-08, BR-17–20): ném `ValidationException`.
-- Vi phạm nghiệp vụ (trùng mã, vượt 24 tín chỉ, đăng ký trùng môn, xóa hoặc hủy khi đã có điểm…): ném `BusinessException`.
-- Thông báo lỗi hiển thị bằng tiếng Việt, nêu rõ trường hoặc quy tắc bị vi phạm. Ví dụ: *"Vượt quá 24 tín chỉ trong học kỳ 2026-1 (hiện có 22, thêm 3)"*.
+### 4.6. Thời khóa biểu và trùng lịch
+
+| Mã | Quy tắc |
+|---|---|
+| **BR-21** | Mỗi buổi học có thứ từ Thứ 2 đến Chủ nhật và 1 ≤ tiết bắt đầu ≤ tiết kết thúc ≤ 12. Mỗi lớp học phần có ít nhất 1 buổi học. Các buổi của cùng một lớp không được trùng nhau. |
+| **BR-22** | **Không đăng ký lớp học phần nếu lịch học trùng với lớp học phần đã đăng ký** trong cùng học kỳ. Hai buổi học trùng nhau khi cùng thứ và khoảng tiết giao nhau: `bắtĐầuA ≤ kếtThúcB` và `bắtĐầuB ≤ kếtThúcA`. Hai buổi chỉ kề nhau (một buổi kết thúc tiết 3, buổi kia bắt đầu tiết 4) thì không trùng. |
+| **BR-23** | Khi sửa hoặc thêm buổi học cho một lớp đã có sinh viên đăng ký, nếu lịch mới làm trùng lịch của sinh viên nào thì từ chối và liệt kê các sinh viên bị trùng. |
+
+### 4.7. Xử lý lỗi
+- Dữ liệu nhập sai định dạng hoặc thiếu (BR-01–03, BR-08, BR-17–21): ném `ValidationException`.
+- Vi phạm nghiệp vụ (trùng mã, vượt 12 tín chỉ, đăng ký trùng môn, trùng lịch học, xóa hoặc hủy khi đã có điểm…): ném `BusinessException`.
+- Thông báo lỗi hiển thị bằng tiếng Việt, nêu rõ trường hoặc quy tắc bị vi phạm. Ví dụ: *"Vượt quá 12 tín chỉ trong học kỳ 2026-1 (hiện có 10, thêm 3)"*, *"Trùng lịch với lớp IT101-01: Thứ 2, tiết 1–3"*.
 
 ## 5. Quy tắc tính điểm
 
@@ -157,7 +170,8 @@ Ví dụ: CC = 9, GK = 7, CK = 6.5. Điểm tổng kết = 0.9 + 2.1 + 3.9 = **6
 ### 5.4. Ca biên cần kiểm thử
 - Điểm tổng kết 3.95 làm tròn thành 4.0, nên là điểm D, đạt.
 - Điểm tổng kết 8.45 làm tròn thành 8.5, nên là điểm A.
-- Đăng ký đúng 24 tín chỉ thì hợp lệ; thêm 1 tín chỉ nữa thì bị từ chối.
+- Đăng ký đúng 12 tín chỉ thì hợp lệ; đang có 10 tín chỉ mà thêm học phần 3 tín chỉ thì bị từ chối.
+- Đã đăng ký lớp học Thứ 2 tiết 1–3: thêm lớp Thứ 2 tiết 3–5 thì trùng lịch; Thứ 2 tiết 4–6 không trùng; Thứ 3 tiết 1–3 không trùng.
 - Điểm thành phần −0.1 hoặc 10.1 thì bị từ chối; điểm 0 và 10 hợp lệ.
 - Học một môn 2 lần, lần 1 được 3.0 (F), lần 2 được 6.0 (C): GPA tích lũy chỉ tính lần 2.
 
@@ -182,9 +196,12 @@ Trên sơ đồ, *Người dùng* là tác nhân trừu tượng. Giáo vụ và
 | UC09 | Xem GPA và bảng điểm cá nhân | Giáo vụ, Giảng viên | #13, #15 |
 | UC10 | Thống kê, báo cáo | Giáo vụ, Giảng viên | #16 |
 | UC11 | Xuất / nhập file | Giáo vụ, Giảng viên | #17 |
+| UC12 | Quản lý thời khóa biểu lớp học phần | Giáo vụ | #9 |
+| UC13 | Xem thời khóa biểu | Giáo vụ, Giảng viên | #12 |
 
 Quan hệ giữa các use case:
-- UC06 *include* "Kiểm tra giới hạn 24 tín chỉ" và "Kiểm tra trùng môn".
+- UC06 *include* "Kiểm tra giới hạn 12 tín chỉ", "Kiểm tra trùng môn" và "Kiểm tra trùng lịch học".
+- UC12 *include* "Kiểm tra trùng lịch học" (BR-23).
 - UC08 *include* "Tính điểm tổng kết và quy đổi".
 - UC11 *extend* UC09 (xuất bảng điểm cá nhân) và UC10 (xuất báo cáo).
 
