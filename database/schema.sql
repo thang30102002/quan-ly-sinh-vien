@@ -193,10 +193,12 @@ CREATE TABLE enrollments (
         CHECK (total IS NULL
                OR (attendance IS NOT NULL AND midterm IS NOT NULL AND final_exam IS NOT NULL
                    AND total = ROUND(attendance * 0.1 + midterm * 0.3 + final_exam * 0.6, 1))),
-    -- BR-10: điểm chữ và hệ 4 đi cùng điểm tổng kết, đúng bảng quy đổi
+    -- BR-10: điểm chữ và hệ 4 đi cùng điểm tổng kết, đúng bảng quy đổi.
+    -- Dùng <=> vì CHECK chỉ chặn khi kết quả FALSE, so sánh với NULL bằng "="
+    -- cho UNKNOWN và sẽ lọt.
     CONSTRAINT chk_enrollments_letter
         CHECK ((total IS NULL AND letter IS NULL)
-               OR letter = CASE
+               OR total IS NOT NULL AND letter <=> CASE
                                WHEN total >= 8.5 THEN 'A'
                                WHEN total >= 8.0 THEN 'B+'
                                WHEN total >= 7.0 THEN 'B'
@@ -208,7 +210,7 @@ CREATE TABLE enrollments (
                            END),
     CONSTRAINT chk_enrollments_gpa4
         CHECK ((total IS NULL AND gpa4 IS NULL)
-               OR gpa4 = CASE
+               OR total IS NOT NULL AND gpa4 <=> CASE
                              WHEN total >= 8.5 THEN 4.0
                              WHEN total >= 8.0 THEN 3.5
                              WHEN total >= 7.0 THEN 3.0
