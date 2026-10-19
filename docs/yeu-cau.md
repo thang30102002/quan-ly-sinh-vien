@@ -45,15 +45,15 @@ Bảng phân quyền chi tiết:
 
 ### 3.2. Quản lý học phần, học kỳ và thời khóa biểu
 - Học phần: thêm, sửa, xóa, tìm kiếm. Thông tin gồm mã học phần, tên, số tín chỉ, mô tả.
-- Học kỳ: thêm, sửa, xóa. Thông tin gồm mã học kỳ, tên, ngày bắt đầu, ngày kết thúc.
-- Lớp học phần: mở một học phần trong một học kỳ và gán giảng viên phụ trách. Một học phần có thể mở nhiều lớp trong cùng học kỳ.
+- Học kỳ: thêm, sửa, xóa. Thông tin gồm mã học kỳ, tên, ngày bắt đầu, ngày kết thúc, trạng thái mở đăng ký.
+- Lớp học phần: mở một học phần trong một học kỳ, gồm mã lớp, giảng viên phụ trách và sĩ số tối đa. Một học phần có thể mở nhiều lớp trong cùng học kỳ.
 - Thời khóa biểu: mỗi lớp học phần có một hoặc nhiều buổi học lặp lại hằng tuần trong suốt học kỳ. Mỗi buổi gồm thứ (Thứ 2 – Chủ nhật), tiết bắt đầu, tiết kết thúc (tiết 1–12; tiết 1–6 buổi sáng, 7–12 buổi chiều) và phòng học. Giáo vụ thêm, sửa, xóa buổi học (xem mục 4.6).
 - Xem thời khóa biểu dạng lưới tuần (thứ × tiết) theo sinh viên, theo lớp học phần hoặc theo giảng viên.
 
 ### 3.3. Đăng ký / hủy học phần
 - Giáo vụ chọn sinh viên và học kỳ, rồi chọn các lớp học phần được mở trong học kỳ đó để đăng ký. Danh sách lớp hiển thị kèm lịch học.
 - Hiển thị tổng số tín chỉ đã đăng ký trong học kỳ, số tín chỉ còn được đăng ký và thời khóa biểu hiện tại của sinh viên.
-- Từ chối đăng ký nếu vượt 12 tín chỉ (BR-04), trùng môn (BR-05) hoặc trùng lịch (BR-22).
+- Từ chối đăng ký nếu vượt 12 tín chỉ (BR-04), trùng môn (BR-05), trùng lịch (BR-22), lớp đã đủ sĩ số (BR-25) hoặc học kỳ không mở đăng ký (BR-26).
 - Hủy đăng ký (xem BR-15).
 
 ### 3.4. Nhập điểm và tính GPA
@@ -115,21 +115,24 @@ Phần mềm tự chuyển mã sang chữ in hoa và bỏ khoảng trắng hai �
 | Mã | Quy tắc |
 |---|---|
 | **BR-17** | Họ tên: bắt buộc, tối đa 100 ký tự. Email (nếu nhập): đúng định dạng email. Số điện thoại (nếu nhập): 10 chữ số, bắt đầu bằng `0`. Ngày sinh: sinh viên phải đủ 16 tuổi trở lên. |
-| **BR-18** | Số tín chỉ của học phần là số nguyên từ 1 đến 10. |
+| **BR-18** | Số tín chỉ của học phần là số nguyên từ 1 đến 6. |
 | **BR-19** | Ngày kết thúc học kỳ phải sau ngày bắt đầu. |
 | **BR-20** | Trạng thái sinh viên là một trong các giá trị: *Đang học*, *Bảo lưu*, *Thôi học*, *Tốt nghiệp*. |
 
-### 4.6. Thời khóa biểu và trùng lịch
+### 4.6. Lớp học phần, thời khóa biểu và trùng lịch
 
 | Mã | Quy tắc |
 |---|---|
 | **BR-21** | Mỗi buổi học có thứ từ Thứ 2 đến Chủ nhật và 1 ≤ tiết bắt đầu ≤ tiết kết thúc ≤ 12. Mỗi lớp học phần có ít nhất 1 buổi học. Các buổi của cùng một lớp không được trùng nhau. |
 | **BR-22** | **Không đăng ký lớp học phần nếu lịch học trùng với lớp học phần đã đăng ký** trong cùng học kỳ. Hai buổi học trùng nhau khi cùng thứ và khoảng tiết giao nhau: `bắtĐầuA ≤ kếtThúcB` và `bắtĐầuB ≤ kếtThúcA`. Hai buổi chỉ kề nhau (một buổi kết thúc tiết 3, buổi kia bắt đầu tiết 4) thì không trùng. |
 | **BR-23** | Khi sửa hoặc thêm buổi học cho một lớp đã có sinh viên đăng ký, nếu lịch mới làm trùng lịch của sinh viên nào thì từ chối và liệt kê các sinh viên bị trùng. |
+| **BR-24** | Mã lớp học phần có dạng `<mã học phần>-<2 chữ số>`, ví dụ `IT101-01`, và là duy nhất trong một học kỳ. |
+| **BR-25** | Sĩ số tối đa của lớp học phần là số nguyên > 0. Lớp đã đủ sĩ số thì không nhận thêm đăng ký. |
+| **BR-26** | Mỗi lúc chỉ có **một học kỳ mở đăng ký**. Chỉ được đăng ký hoặc hủy đăng ký trong học kỳ đang mở. |
 
 ### 4.7. Xử lý lỗi
-- Dữ liệu nhập sai định dạng hoặc thiếu (BR-01–03, BR-08, BR-17–21): ném `ValidationException`.
-- Vi phạm nghiệp vụ (trùng mã, vượt 12 tín chỉ, đăng ký trùng môn, trùng lịch học, xóa hoặc hủy khi đã có điểm…): ném `BusinessException`.
+- Dữ liệu nhập sai định dạng hoặc thiếu (BR-01–03, BR-08, BR-17–21, BR-24): ném `ValidationException`.
+- Vi phạm nghiệp vụ (trùng mã, vượt 12 tín chỉ, đăng ký trùng môn, trùng lịch học, lớp đầy, học kỳ không mở đăng ký, xóa hoặc hủy khi đã có điểm…): ném `BusinessException`.
 - Thông báo lỗi hiển thị bằng tiếng Việt, nêu rõ trường hoặc quy tắc bị vi phạm. Ví dụ: *"Vượt quá 12 tín chỉ trong học kỳ 2026-1 (hiện có 10, thêm 3)"*, *"Trùng lịch với lớp IT101-01: Thứ 2, tiết 1–3"*.
 
 ## 5. Quy tắc tính điểm
