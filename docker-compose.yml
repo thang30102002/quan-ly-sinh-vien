@@ -1,0 +1,71 @@
+# Môi trường dev bằng Docker (issue #83): PostgreSQL, thêm pgAdmin và Maven nếu cần.
+# Hướng dẫn: docs/docker.md. Cổng và mật khẩu đặt trong .env (copy từ .env.example).
+
+services:
+  db:
+    image: postgres:16
+    container_name: qlsv-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: qlsv
+      POSTGRES_USER: ${DB_USER:-qlsv}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-qlsv}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      # Chỉ mở trên localhost; mặc định 5435 để không đụng PostgreSQL đã cài sẵn ở 5432
+      - "127.0.0.1:${DB_PORT:-5435}:5432"
+    volumes:
+      # Chạy schema.sql rồi seed.sql (theo thứ tự tên file), chỉ khi volume còn trống
+      - ./database:/docker-entrypoint-initdb.d:ro
+      - qlsv-data:/var/lib/postgresql/data
+    healthcheck:
+      # Chỉ healthy khi server thật đã chạy và đã nạp xong dữ liệu mẫu
+      test: ["CMD-SHELL", "psql -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d qlsv -tAc 'SELECT 1 FROM enrollments LIMIT 1' | grep -q 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # Giao diện web quản lý CSDL (tùy chọn): docker compose --profile gui up -d
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: qlsv-pgadmin
+    profiles: ["gui"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Chế độ desktop: không phải đăng nhập pgAdmin, chỉ nhập mật khẩu CSDL lần đầu
+      PGADMIN_DEFAULT_EMAIL: dev@example.com
+      PGADMIN_DEFAULT_PASSWORD: qlsv
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - pgadmin-data:/var/lib/pgadmin
+
+  # Build/test khi máy chưa cài Maven: docker compose run --rm maven mvn test
+  maven:
+    image: maven:3.9-eclipse-temurin-17
+    profiles: ["tools"]
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Trong mạng Docker, database có host là "db", cổng 5432
+      DB_URL: jdbc:postgresql://db:5432/qlsv
+      DB_USER: ${DB_USER:-qlsv}
+      DB_PASSWORD: ${DB_PASSWORD:-qlsv}
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+
+volumes:
+  qlsv-data:
+  pgadmin-data:
+  maven-repo:
