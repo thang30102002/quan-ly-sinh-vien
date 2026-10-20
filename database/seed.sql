@@ -1,8 +1,9 @@
 -- =====================================================================
 -- Quản lý Sinh viên & Điểm số: dữ liệu mẫu (issue #2)
 --
--- Chạy SAU database/schema.sql (schema.sql xóa và tạo lại database, nên
+-- Chạy SAU database/schema.sql (schema.sql xóa và tạo lại các bảng, nên
 -- muốn nạp lại dữ liệu mẫu thì chạy lại cả hai file theo thứ tự).
+-- Docker tự chạy cả hai file khi tạo database lần đầu (docs/docker.md).
 --
 -- Tóm tắt:
 --   20 sinh viên, 10 học phần, 2 học kỳ (2025-2 đã đóng, 2026-1 đang mở),
@@ -26,8 +27,7 @@
 --   BR-08            : SV2024007 lớp PE101-01 HK 2025-2 mới có điểm chuyên cần
 -- =====================================================================
 
-USE qlsv;
-SET NAMES utf8mb4;
+SET client_encoding = 'UTF8';
 
 -- ---------------------------------------------------------------------
 -- Sinh viên (id 1–20)
@@ -187,3 +187,14 @@ INSERT INTO enrollments (student_id, section_id, registered_at) VALUES
     (12,  7, '2026-08-26 08:10:00'),
     (13, 11, '2026-08-26 08:20:00'),
     (14, 15, '2026-08-26 08:30:00');
+
+-- ---------------------------------------------------------------------
+-- Các bảng dùng id cố định ở trên, nên phải đẩy bộ đếm IDENTITY lên sau
+-- id lớn nhất; nếu không, INSERT tiếp theo của phần mềm sẽ trùng khóa chính.
+-- ---------------------------------------------------------------------
+SELECT setval(pg_get_serial_sequence('students',       'id'), (SELECT MAX(id) FROM students));
+SELECT setval(pg_get_serial_sequence('courses',        'id'), (SELECT MAX(id) FROM courses));
+SELECT setval(pg_get_serial_sequence('semesters',      'id'), (SELECT MAX(id) FROM semesters));
+SELECT setval(pg_get_serial_sequence('class_sections', 'id'), (SELECT MAX(id) FROM class_sections));
+SELECT setval(pg_get_serial_sequence('schedules',      'id'), (SELECT MAX(id) FROM schedules));
+SELECT setval(pg_get_serial_sequence('enrollments',    'id'), (SELECT MAX(id) FROM enrollments));
