@@ -24,7 +24,7 @@ Mọi commit message, mô tả PR, comment trong code và câu trả lời đề
 Trình bày cho người dùng:
 - Tóm tắt mục tiêu issue.
 - Danh sách file sẽ tạo/sửa (đường dẫn cụ thể).
-- Ánh xạ từng mục checklist `- [ ]` (cả issue cha lẫn sub-issue) → cách làm. Đánh dấu rõ mục nào **phải làm thủ công** (vd cài XAMPP, vẽ draw.io, clone repo, thao tác phpMyAdmin) — skill không làm thay được.
+- Ánh xạ từng mục checklist `- [ ]` (cả issue cha lẫn sub-issue) → cách làm. Đánh dấu rõ mục nào **phải làm thủ công** (vd cài Docker Desktop, vẽ draw.io, clone repo, thao tác pgAdmin) — skill không làm thay được.
 - Các điểm còn mơ hồ cần người dùng chốt (vd định dạng mã SV, trọng số điểm). Hỏi bằng AskUserQuestion nếu có.
 - Cách kiểm thử.
 
@@ -49,7 +49,7 @@ Trình bày cho người dùng:
 
 - Có code Java: viết JUnit 5 cho service/validator/GpaCalculator (ưu tiên các ca biên ở mục 5.4 của `docs/yeu-cau.md`: 3.95→4.0, 8.45→8.5, đúng 12 tín chỉ và 10+3, trùng lịch tiết 1–3 với 3–5, kề lịch 1–3 với 4–6, điểm âm/ >10…). Chạy `mvn test`.
 - Nếu `mvn` chưa cài (`which mvn` rỗng): báo người dùng và gợi ý `brew install maven`; không tự cài.
-- Phần cần MySQL/XAMPP: nếu không kết nối được thì ghi rõ "chưa kiểm thử với CSDL thật" chứ không tuyên bố là đã chạy được.
+- Phần cần CSDL: bật bằng `docker compose up -d` (xem docs/docker.md); nếu không kết nối được thì ghi rõ "chưa kiểm thử với CSDL thật" chứ không tuyên bố là đã chạy được.
 - Đối chiếu lại từng mục **Hoàn thành khi** — mục nào chưa đạt phải nói rõ.
 
 ## Bước 5 — PR và cập nhật issue

@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Dự án
 
-Phần mềm desktop Quản lý Sinh viên & Điểm số: Java 17, Swing, Maven, JDBC thuần (`mysql-connector-j`), MySQL/MariaDB (XAMPP), JUnit 5. Đồ án nhóm làm theo **Kế hoạch 20 ngày** trong `README.md`, mỗi ngày một GitHub issue (#1–#20). Mỗi issue có sub-issue chia cho các thành viên A/B/C.
+Phần mềm desktop Quản lý Sinh viên & Điểm số: Java 17, Swing, Maven, JDBC thuần (`org.postgresql:postgresql`), PostgreSQL 16 chạy bằng Docker Compose, JUnit 5. Đồ án nhóm làm theo **Kế hoạch 20 ngày** trong `README.md`, mỗi ngày một GitHub issue (#1–#20). Mỗi issue có sub-issue chia cho các thành viên A/B/C.
 
-Trạng thái hiện tại: mới có tài liệu (`docs/`) và SQL (`database/`). Project Maven và `src/` sẽ được tạo ở #3, nên các lệnh Maven bên dưới chỉ dùng được sau khi xong #3.
+Trạng thái hiện tại: mới có tài liệu (`docs/`), SQL (`database/`) và môi trường Docker (`docker-compose.yml`). Project Maven và `src/` sẽ được tạo ở #3, nên các lệnh Maven bên dưới chỉ dùng được sau khi xong #3.
 
 ## Ngôn ngữ và quy ước
 
@@ -17,9 +17,12 @@ Trạng thái hiện tại: mới có tài liệu (`docs/`) và SQL (`database/`
 ## Lệnh
 
 ```bash
-# Tạo lại database từ đầu (schema.sql chạy DROP DATABASE qlsv trước)
-mysql -u root --default-character-set=utf8mb4 < database/schema.sql
-mysql -u root --default-character-set=utf8mb4 < database/seed.sql
+# Database (lần đầu: cp .env.example .env). Volume trống thì tự chạy schema.sql rồi seed.sql
+docker compose up -d
+docker compose down -v && docker compose up -d     # tạo lại từ đầu sau khi sửa script
+docker compose exec -T db psql -U qlsv -d qlsv -v ON_ERROR_STOP=1 < database/schema.sql   # chạy lại không xóa volume
+docker compose exec db psql -U qlsv -d qlsv        # mở psql
+docker compose --profile gui up -d                 # pgAdmin (tùy chọn): http://localhost:5050
 
 # Sau khi có project Maven (#3)
 mvn clean package                      # build ra target/qlsv.jar
@@ -27,12 +30,13 @@ mvn test                               # chạy toàn bộ test
 mvn test -Dtest=<TênClassTest>                # một class
 mvn test -Dtest=<TênClassTest>#<tênMethod>    # một method
 java -jar target/qlsv.jar
+docker compose run --rm maven mvn test             # khi máy chưa cài Maven
 ```
 
 Môi trường máy dev:
-- `mvn` chưa cài (`brew install maven`).
-- MySQL 9.3 của Homebrew đang chiếm cổng 3306, Docker đang chiếm cổng 80. Phải tắt chúng thì Apache/MariaDB của XAMPP mới chạy được (phpMyAdmin: `http://localhost/phpmyadmin`).
-- Script SQL phải chạy được trên cả MySQL 8.0.16+ và MariaDB 10.3 (bản đi kèm XAMPP), nên chỉ dùng cú pháp mà cả hai cùng hỗ trợ.
+- `mvn` và JDK chưa cài (`brew install maven`), hoặc dùng service `maven` của Docker.
+- Một PostgreSQL cài sẵn đang chiếm cổng 5432, nên cổng của DB Docker mặc định là **5435** (`DB_PORT` trong `.env`). JDBC URL từ máy thật: `jdbc:postgresql://localhost:5435/qlsv`, user/mật khẩu `qlsv`/`qlsv`. Từ container khác thì dùng `db:5432`. Chi tiết xem `docs/docker.md`.
+- Script SQL viết cho PostgreSQL 16 và chạy bằng `psql` với `ON_ERROR_STOP`.
 
 ## Nguồn chuẩn về nghiệp vụ
 
@@ -53,10 +57,10 @@ MVC + DAO, package gốc `com.qlsv`: `model` → `dao` (JDBC, `PreparedStatement
 
 Gồm 6 bảng: `students`, `courses`, `semesters`, `class_sections`, `schedules`, `enrollments`. Quy tắc nghiệp vụ được chia giữa CSDL và Service:
 
-- **CSDL chặn:** định dạng mã (CHECK REGEXP, phân biệt hoa thường, nên Java phải `trim().toUpperCase()` trước khi lưu), tín chỉ 1–6, sĩ số > 0, thứ/tiết, điểm 0–10, và chỉ một học kỳ mở (cột sinh ra `open_flag` + UNIQUE).
+- **CSDL chặn:** định dạng mã (CHECK với toán tử `~`, phân biệt hoa thường, nên Java phải `trim().toUpperCase()` trước khi lưu), tín chỉ 1–6, sĩ số > 0, thứ/tiết, điểm 0–10, và chỉ một học kỳ mở (partial unique index `uq_semesters_open ... WHERE is_open`).
 - **CHECK cho điểm:** `enrollments.total/letter/gpa4` do Java tính rồi lưu lại, nhưng CHECK bắt chúng khớp đúng công thức BR-09 và bảng quy đổi BR-10. Nếu Java tính lệch thì INSERT/UPDATE bị lỗi. Phải ghi ba cột này cùng lúc, và cùng NULL khi chưa đủ 3 điểm thành phần.
 - **FK:** RESTRICT khi xóa học phần, học kỳ, lớp đang được dùng (BR-16). CASCADE cho `schedules` khi xóa lớp và cho `enrollments` khi xóa sinh viên (Service phải kiểm tra BR-14 trước khi xóa).
-- **Service phải tự kiểm tra:** BR-04, 05, 07, 14, 15, 17 (email, tuổi), 21 (các buổi trong một lớp không trùng nhau), 22, 23, 24 (tiền tố mã lớp), 25, 26 (để báo lỗi tiếng Việt thay vì lỗi `Duplicate entry`).
-- `students.status` và `gender` là ENUM mã tiếng Anh (`STUDYING/RESERVED/DROPPED/GRADUATED`, `MALE/FEMALE/OTHER`); giao diện hiển thị nhãn tiếng Việt.
-- Đổi cấu trúc bảng thì sửa `schema.sql` rồi chạy lại. Không sửa trực tiếp bằng phpMyAdmin.
-- `seed.sql` dùng id cố định. Đầu file liệt kê sẵn các ca dữ liệu để thử từng quy tắc (trùng/kề lịch, 12 và 10 tín chỉ, lớp đầy, học lại, làm tròn), nên dùng lại khi viết test.
+- **Service phải tự kiểm tra:** BR-04, 05, 07, 14, 15, 17 (email, tuổi), 21 (các buổi trong một lớp không trùng nhau), 22, 23, 24 (tiền tố mã lớp), 25, 26 (để báo lỗi tiếng Việt thay vì lỗi `duplicate key value`).
+- `students.status` và `gender` là `VARCHAR` + CHECK chứa mã tiếng Anh (`STUDYING/RESERVED/DROPPED/GRADUATED`, `MALE/FEMALE/OTHER`), không dùng kiểu ENUM của PostgreSQL nên DAO gán bằng `setString`; giao diện hiển thị nhãn tiếng Việt.
+- Đổi cấu trúc bảng thì sửa `schema.sql` rồi chạy lại. Không sửa trực tiếp bằng pgAdmin.
+- `seed.sql` dùng id cố định, cuối file gọi `setval` để bộ đếm IDENTITY chạy tiếp sau id lớn nhất (thêm bảng có seed thì nhớ thêm dòng này). Đầu file liệt kê sẵn các ca dữ liệu để thử từng quy tắc (trùng/kề lịch, 12 và 10 tín chỉ, lớp đầy, học lại, làm tròn), nên dùng lại khi viết test.
