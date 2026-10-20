@@ -2,12 +2,12 @@
 
 > Issue: [#83](https://github.com/thang30102002/quan-ly-sinh-vien/issues/83) · Cấu hình: [`docker-compose.yml`](../docker-compose.yml), [`.env.example`](../.env.example)
 
-Docker chạy database PostgreSQL 16 có sẵn dữ liệu mẫu, nên cả nhóm dùng cùng một môi trường mà không phải cài PostgreSQL lên máy. Ứng dụng Swing vẫn chạy trên máy thật (`java -jar target/qlsv.jar`) và kết nối tới database trong Docker qua `localhost`.
+Docker chạy database PostgreSQL 16 có sẵn dữ liệu mẫu, kèm pgAdmin để xem database trên web, nên cả nhóm dùng cùng một môi trường mà không phải cài PostgreSQL lên máy. Ứng dụng Swing vẫn chạy trên máy thật (`java -jar target/qlsv.jar`) và kết nối tới database trong Docker qua `localhost`.
 
 | Service | Bật bằng | Dùng để |
 |---|---|---|
 | `db` | `docker compose up -d` | PostgreSQL 16, database `qlsv` |
-| `pgadmin` | `docker compose --profile gui up -d` | Xem, truy vấn dữ liệu trên web và vẽ ERD (tùy chọn) |
+| `pgadmin` | `docker compose up -d` (bật cùng `db`) | Giao diện web để xem, truy vấn dữ liệu và vẽ ERD. App không cần nó |
 | `maven` | `docker compose run --rm maven mvn ...` | Build/test khi máy chưa cài Maven (tùy chọn) |
 
 ## 1. Cài đặt lần đầu
@@ -18,7 +18,7 @@ Docker chạy database PostgreSQL 16 có sẵn dữ liệu mẫu, nên cả nhó
    ```bash
    cp .env.example .env
    docker compose up -d
-   docker compose ps        # qlsv-db phải ở trạng thái "healthy"
+   docker compose ps        # qlsv-db phải ở trạng thái "healthy", qlsv-pgadmin "running"
    ```
 
 Lần đầu khởi động, Docker tạo database `qlsv` rồi chạy `database/schema.sql`, sau đó `database/seed.sql`. Container chỉ chuyển sang `healthy` khi đã nạp xong dữ liệu mẫu.
@@ -69,11 +69,9 @@ docker compose run --rm maven mvn test
 docker compose run --rm maven mvn clean package
 ```
 
-## 4. pgAdmin (tùy chọn)
+## 4. pgAdmin
 
-```bash
-docker compose --profile gui up -d
-```
+pgAdmin tự bật cùng database khi chạy `docker compose up -d`. Muốn tắt riêng nó cho nhẹ máy thì chạy `docker compose stop pgadmin`.
 
 1. Mở <http://localhost:5050> (cổng đặt bằng `PGADMIN_PORT`). Không cần đăng nhập pgAdmin.
 2. Server **qlsv (Docker)** đã được khai báo sẵn. Lần đầu mở, nhập mật khẩu `qlsv` và tick *Save password*.

@@ -18,11 +18,10 @@ Trạng thái hiện tại: mới có tài liệu (`docs/`), SQL (`database/`) v
 
 ```bash
 # Database (lần đầu: cp .env.example .env). Volume trống thì tự chạy schema.sql rồi seed.sql
-docker compose up -d
+docker compose up -d                               # bật PostgreSQL + pgAdmin (http://localhost:5050)
 docker compose down -v && docker compose up -d     # tạo lại từ đầu sau khi sửa script
 docker compose exec -T db psql -U qlsv -d qlsv -v ON_ERROR_STOP=1 < database/schema.sql   # chạy lại không xóa volume
 docker compose exec db psql -U qlsv -d qlsv        # mở psql
-docker compose --profile gui up -d                 # pgAdmin (tùy chọn): http://localhost:5050
 
 # Sau khi có project Maven (#3)
 mvn clean package                      # build ra target/qlsv.jar

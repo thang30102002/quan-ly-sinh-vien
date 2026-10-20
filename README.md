@@ -18,7 +18,7 @@ Phần mềm desktop viết bằng Java để quản lý sinh viên, học phầ
 | Ngôn ngữ | Java 17 |
 | Build, thư viện | Maven |
 | Giao diện | Java Swing |
-| Cơ sở dữ liệu | PostgreSQL 16, chạy bằng Docker Compose (pgAdmin tùy chọn) |
+| Cơ sở dữ liệu | PostgreSQL 16 + pgAdmin, chạy bằng Docker Compose |
 | Kết nối CSDL | JDBC (`org.postgresql:postgresql`) |
 | Kiểm thử | JUnit 5 |
 | Kiến trúc | MVC + DAO |

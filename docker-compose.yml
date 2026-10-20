@@ -1,4 +1,4 @@
-# Môi trường dev bằng Docker (issue #83): PostgreSQL, thêm pgAdmin và Maven nếu cần.
+# Môi trường dev bằng Docker (issue #83): PostgreSQL + pgAdmin, thêm Maven nếu cần.
 # Hướng dẫn: docs/docker.md. Cổng và mật khẩu đặt trong .env (copy từ .env.example).
 
 services:
@@ -27,11 +27,10 @@ services:
       retries: 30
       start_period: 20s
 
-  # Giao diện web quản lý CSDL (tùy chọn): docker compose --profile gui up -d
+  # Giao diện web quản lý CSDL: http://localhost:5050 (bật cùng db)
   pgadmin:
     image: dpage/pgadmin4:8
     container_name: qlsv-pgadmin
-    profiles: ["gui"]
     restart: unless-stopped
     depends_on:
       db:
