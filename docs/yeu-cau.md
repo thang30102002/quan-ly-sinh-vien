@@ -6,7 +6,7 @@
 
 ## 1. Giới thiệu
 
-Phần mềm desktop (Java Swing + MySQL) cho phòng đào tạo của khoa/trường. Phần mềm dùng để quản lý hồ sơ sinh viên, học phần, học kỳ, thời khóa biểu lớp học phần, đăng ký học phần, nhập điểm, tính GPA và lập báo cáo.
+Phần mềm desktop (Java Swing + PostgreSQL) cho phòng đào tạo của khoa/trường. Phần mềm dùng để quản lý hồ sơ sinh viên, học phần, học kỳ, thời khóa biểu lớp học phần, đăng ký học phần, nhập điểm, tính GPA và lập báo cáo.
 
 Ngoài phạm vi: thu học phí, tự động xếp thời khóa biểu (giáo vụ nhập lịch bằng tay), kiểm tra trùng phòng học hoặc trùng lịch dạy của giảng viên, cổng thông tin cho sinh viên tự đăng nhập, ứng dụng web/mobile.
 
@@ -210,8 +210,8 @@ Quan hệ giữa các use case:
 - UC11 *extend* UC09 (xuất bảng điểm cá nhân) và UC10 (xuất báo cáo).
 
 ## 7. Yêu cầu phi chức năng
-- Chạy trên Windows/macOS với JDK 17 và MySQL/MariaDB (XAMPP).
-- Giao diện tiếng Việt, hiển thị đúng Unicode. CSDL dùng `utf8mb4`.
+- Chạy trên Windows/macOS với JDK 17. CSDL là PostgreSQL 16, chạy bằng Docker (`docker compose up -d`).
+- Giao diện tiếng Việt, hiển thị đúng Unicode. CSDL dùng bộ mã `UTF8`.
 - Mọi truy vấn dùng `PreparedStatement` để tránh SQL injection.
 - Tìm kiếm trên 1.000 sinh viên trả kết quả trong dưới 1 giây.
 - Phần tính điểm/GPA (`GpaCalculator`) và kiểm tra dữ liệu (`Validator`) có unit test JUnit 5, phủ các ca biên ở mục 5.4.

@@ -18,8 +18,8 @@ Phần mềm desktop viết bằng Java để quản lý sinh viên, học phầ
 | Ngôn ngữ | Java 17 |
 | Build, thư viện | Maven |
 | Giao diện | Java Swing |
-| Cơ sở dữ liệu | MySQL / MariaDB (XAMPP), quản lý bằng phpMyAdmin |
-| Kết nối CSDL | JDBC (`mysql-connector-j`) |
+| Cơ sở dữ liệu | PostgreSQL 16 + pgAdmin, chạy bằng Docker Compose |
+| Kết nối CSDL | JDBC (`org.postgresql:postgresql`) |
 | Kiểm thử | JUnit 5 |
 | Kiến trúc | MVC + DAO |
 
@@ -27,6 +27,8 @@ Phần mềm desktop viết bằng Java để quản lý sinh viên, học phầ
 
 ```
 database/                schema.sql, seed.sql
+docker/                  cấu hình pgAdmin cho Docker
+docker-compose.yml       PostgreSQL + pgAdmin + Maven
 docs/                    yêu cầu, sơ đồ, test case
 src/main/java/com/qlsv/
 ├── model/               Student, Course, Semester, ClassSection, Schedule, Enrollment
@@ -82,8 +84,13 @@ Theo dõi tiến độ tại [Milestones](https://github.com/thang30102002/quan-
 
 > Phần này sẽ được hoàn thiện ở [#20](https://github.com/thang30102002/quan-ly-sinh-vien/issues/20).
 
-1. Cài JDK 17 và XAMPP, bật MySQL trong XAMPP Control Panel
-2. Trong phpMyAdmin, chạy `database/schema.sql` rồi `database/seed.sql`
-3. Sửa `src/main/resources/db.properties` nếu tài khoản database khác mặc định
-4. Build: `mvn clean package`
+1. Cài JDK 17 và [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+2. Tạo database (tự chạy `database/schema.sql` rồi `database/seed.sql`):
+   ```bash
+   cp .env.example .env
+   docker compose up -d
+   ```
+   Chi tiết, cách reset và lỗi hay gặp: [`docs/docker.md`](docs/docker.md)
+3. Sửa `src/main/resources/db.properties` nếu đổi cổng hoặc tài khoản trong `.env`
+4. Build: `mvn clean package` (chưa cài Maven thì dùng `docker compose run --rm maven mvn clean package`)
 5. Chạy: `java -jar target/qlsv.jar`
