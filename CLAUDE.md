@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Phần mềm desktop Quản lý Sinh viên & Điểm số: Java 17, Swing, Maven, JDBC thuần (`org.postgresql:postgresql`), PostgreSQL 16 chạy bằng Docker Compose, JUnit 5. Đồ án nhóm làm theo **Kế hoạch 20 ngày** trong `README.md`, mỗi ngày một GitHub issue (#1–#20). Mỗi issue có sub-issue chia cho các thành viên A/B/C.
 
-Trạng thái hiện tại: mới có tài liệu (`docs/`), SQL (`database/`) và môi trường Docker (`docker-compose.yml`). Project Maven và `src/` sẽ được tạo ở #3, nên các lệnh Maven bên dưới chỉ dùng được sau khi xong #3.
+Trạng thái hiện tại: có tài liệu (`docs/`), SQL (`database/`), môi trường Docker (`docker-compose.yml`) và project Maven (#3) với `util/DBConnection`, `db.properties`, `DBConnectionTest`. Các package khác mới chỉ có `package-info.java`. Hướng dẫn cài môi trường: `docs/cai-dat.md`.
 
 ## Ngôn ngữ và quy ước
 
@@ -23,7 +23,7 @@ docker compose down -v && docker compose up -d     # tạo lại từ đầu sau
 docker compose exec -T db psql -U qlsv -d qlsv -v ON_ERROR_STOP=1 < database/schema.sql   # chạy lại không xóa volume
 docker compose exec db psql -U qlsv -d qlsv        # mở psql
 
-# Sau khi có project Maven (#3)
+# Maven (test cần database Docker đang chạy)
 mvn clean package                      # build ra target/qlsv.jar
 mvn test                               # chạy toàn bộ test
 mvn test -Dtest=<TênClassTest>                # một class
