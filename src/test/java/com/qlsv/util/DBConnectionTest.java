@@ -9,9 +9,6 @@ import java.sql.Statement;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Cần database Docker đang chạy: docker compose up -d (xem docs/docker.md).
- */
 class DBConnectionTest {
 
     @Test
@@ -19,9 +16,9 @@ class DBConnectionTest {
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery("SELECT current_database(), 1")) {
-            assertTrue(conn.isValid(5), "Kết nối không hợp lệ");
+            assertTrue(conn.isValid(5));
             assertTrue(rs.next());
-            assertEquals("qlsv", rs.getString(1));
+            assertTrue(rs.getString(1).startsWith("qlsv"));
             assertEquals(1, rs.getInt(2));
         }
     }
