@@ -42,4 +42,10 @@ public interface StudentDAO {
      * Tham số null hoặc rỗng thì bỏ qua điều kiện đó.
      */
     List<Student> search(String keyword, String className) throws SQLException;
+
+    /**
+     * BR-14: sinh viên đã có ít nhất một điểm thành phần (chuyên cần, giữa kỳ
+     * hoặc cuối kỳ) ở bất kỳ đăng ký nào hay chưa.
+     */
+    boolean hasGrades(int studentId) throws SQLException;
 }

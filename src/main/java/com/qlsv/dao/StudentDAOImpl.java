@@ -41,6 +41,10 @@ public class StudentDAOImpl implements StudentDAO {
 
     private static final String ORDER_BY_CODE = " ORDER BY student_code";
 
+    private static final String HAS_GRADES_SQL =
+            "SELECT EXISTS (SELECT 1 FROM enrollments WHERE student_id = ?"
+            + " AND (attendance IS NOT NULL OR midterm IS NOT NULL OR final_exam IS NOT NULL))";
+
     @Override
     public void insert(Student student) throws SQLException {
         try (Connection conn = DBConnection.getConnection();
@@ -131,6 +135,17 @@ public class StudentDAOImpl implements StudentDAO {
                 ps.setString(i + 1, params.get(i));
             }
             return queryList(ps);
+        }
+    }
+
+    @Override
+    public boolean hasGrades(int studentId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(HAS_GRADES_SQL)) {
+            ps.setInt(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
         }
     }
 

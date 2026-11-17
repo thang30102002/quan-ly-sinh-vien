@@ -12,8 +12,10 @@ import com.qlsv.model.Student;
 import com.qlsv.model.StudentStatus;
 import com.qlsv.util.DBConnection;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -29,8 +31,17 @@ class StudentDAOImplTest {
     @BeforeEach
     @AfterEach
     void cleanUp() throws SQLException {
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM students")) {
+        try (Connection conn = DBConnection.getConnection()) {
+            // Xóa students trước: enrollments xóa theo (CASCADE), sau đó mới xóa được lớp, học phần, học kỳ
+            execute(conn, "DELETE FROM students");
+            execute(conn, "DELETE FROM class_sections WHERE section_code = 'ZZ901-01'");
+            execute(conn, "DELETE FROM courses WHERE course_code = 'ZZ901'");
+            execute(conn, "DELETE FROM semesters WHERE semester_code = '2099-1'");
+        }
+    }
+
+    private static void execute(Connection conn, String sql) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.executeUpdate();
         }
     }
@@ -226,6 +237,53 @@ class StudentDAOImplTest {
 
         List<Student> list = dao.search("KhôngCóTênNày", null);
         assertTrue(list.isEmpty());
+    }
+
+    @Test
+    void hasGrades_theoDiemThanhPhan() throws SQLException {
+        Student noEnrollment = newStudent("SV2026931", "Nguyễn Văn Không", "CNTT-K26A");
+        Student noGrade = newStudent("SV2026932", "Trần Văn Chưa", "CNTT-K26A");
+        Student oneGrade = newStudent("SV2026933", "Lê Văn Có", "CNTT-K26A");
+        dao.insert(noEnrollment);
+        dao.insert(noGrade);
+        dao.insert(oneGrade);
+
+        int sectionId = createTestSection();
+        enroll(noGrade.getId(), sectionId, null);
+        enroll(oneGrade.getId(), sectionId, new BigDecimal("8.0"));
+
+        assertFalse(dao.hasGrades(noEnrollment.getId()));
+        assertFalse(dao.hasGrades(noGrade.getId()));
+        assertTrue(dao.hasGrades(oneGrade.getId()));
+        assertFalse(dao.hasGrades(-1));
+    }
+
+    /** Tạo học kỳ 2099-1, học phần ZZ901 và lớp ZZ901-01 dành riêng cho test, trả về id lớp. */
+    private static int createTestSection() throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "WITH sem AS (INSERT INTO semesters (semester_code, name, start_date, end_date)"
+                     + " VALUES ('2099-1', 'HK test', DATE '2099-09-01', DATE '2100-01-15') RETURNING id),"
+                     + " c AS (INSERT INTO courses (course_code, name, credits)"
+                     + " VALUES ('ZZ901', 'Học phần test', 3) RETURNING id)"
+                     + " INSERT INTO class_sections (section_code, course_id, semester_id, max_students)"
+                     + " SELECT 'ZZ901-01', c.id, sem.id, 40 FROM c, sem RETURNING id");
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    /** Đăng ký sinh viên vào lớp, chỉ có điểm chuyên cần (hoặc chưa có điểm nào nếu null). */
+    private static void enroll(int studentId, int sectionId, BigDecimal attendance) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "INSERT INTO enrollments (student_id, section_id, attendance) VALUES (?, ?, ?)")) {
+            ps.setInt(1, studentId);
+            ps.setInt(2, sectionId);
+            ps.setBigDecimal(3, attendance);
+            ps.executeUpdate();
+        }
     }
 
     private static Student newStudent(String code, String name, String className) {
