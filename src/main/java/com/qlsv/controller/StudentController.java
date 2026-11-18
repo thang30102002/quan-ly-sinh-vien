@@ -26,7 +26,7 @@ public class StudentController {
         this.view = Objects.requireNonNull(view, "view");
         this.service = Objects.requireNonNull(service, "service");
 
-        view.getTblStudents().setModel(tableModel);
+        view.setTableModel(tableModel);
         view.getBtnRefresh().addActionListener(e -> loadStudents());
     }
 

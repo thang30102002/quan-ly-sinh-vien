@@ -4,7 +4,11 @@ import com.qlsv.model.Gender;
 import com.qlsv.model.StudentStatus;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -24,7 +28,11 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 /**
  * Màn hình quản lý sinh viên: form bên trái, bảng danh sách bên phải, thanh nút bên dưới.
@@ -38,7 +46,16 @@ public class StudentPanel extends JPanel {
     public static final String DATE_PATTERN = "dd/MM/yyyy";
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
-    private static final int FIELD_COLUMNS = 18;
+    private static final int FIELD_COLUMNS = 12;
+
+    /** Màu nền dòng chẵn/lẻ xen kẽ cho dễ dò theo hàng. */
+    private static final Color ROW_EVEN = Color.WHITE;
+    private static final Color ROW_ODD = new Color(0xF3, 0xF6, 0xFA);
+    private static final Color GRID = new Color(0xE2, 0xE6, 0xEB);
+    private static final Color DANGER = new Color(0xB4, 0x23, 0x18);
+
+    /** Độ rộng ưu tiên của từng cột, theo thứ tự cột trong {@link StudentTableModel}. */
+    private static final int[] COLUMN_WIDTHS = {85, 170, 95, 70, 90, 55, 200, 100, 90};
 
     // Form thông tin sinh viên
     private final JTextField txtStudentCode = new JTextField(FIELD_COLUMNS);
@@ -53,7 +70,16 @@ public class StudentPanel extends JPanel {
     private final JComboBox<StudentStatus> cboStatus = new JComboBox<>(StudentStatus.values());
 
     // Bảng danh sách
-    private final JTable tblStudents = new JTable();
+    private final JTable tblStudents = new JTable() {
+        @Override
+        public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+            Component c = super.prepareRenderer(renderer, row, column);
+            if (!isRowSelected(row)) {
+                c.setBackground(row % 2 == 0 ? ROW_EVEN : ROW_ODD);
+            }
+            return c;
+        }
+    };
 
     // Thanh nút
     private final JButton btnAdd = new JButton("Thêm");
@@ -77,6 +103,7 @@ public class StudentPanel extends JPanel {
         txtDob.setToolTipText("Nhập theo dạng " + DATE_PATTERN + ", ví dụ 01/05/2006");
         txtStudentCode.setToolTipText("Ví dụ SV2026001 (BR-01)");
         txtPhone.setToolTipText("10 chữ số, bắt đầu bằng 0 (BR-17)");
+        spnIntakeYear.setToolTipText("Năm nhập học, trùng với 4 số sau SV trong mã (BR-01)");
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createTitledBorder("Thông tin sinh viên"));
@@ -84,12 +111,12 @@ public class StudentPanel extends JPanel {
         int row = 0;
         addRow(form, row++, "Mã SV *", txtStudentCode);
         addRow(form, row++, "Họ tên *", txtFullName);
-        addRow(form, row++, "Ngày sinh * (" + DATE_PATTERN + ")", txtDob);
+        addRow(form, row++, "Ngày sinh *", txtDob);
         addRow(form, row++, "Giới tính *", cboGender);
         addRow(form, row++, "Email", txtEmail);
         addRow(form, row++, "Số điện thoại", txtPhone);
         addRow(form, row++, "Lớp sinh hoạt *", txtClassName);
-        addRow(form, row++, "Khóa (năm nhập học) *", spnIntakeYear);
+        addRow(form, row++, "Khóa *", spnIntakeYear);
         addRow(form, row++, "Trạng thái *", cboStatus);
 
         // Dòng trống cuối cùng chiếm phần cao còn lại để các ô dồn lên trên
@@ -119,13 +146,15 @@ public class StudentPanel extends JPanel {
         tblStudents.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblStudents.setAutoCreateRowSorter(true);
         tblStudents.setFillsViewportHeight(true);
-        tblStudents.getTableHeader().setReorderingAllowed(false);
-        tblStudents.setDefaultRenderer(LocalDate.class, new DefaultTableCellRenderer() {
-            @Override
-            protected void setValue(Object value) {
-                setText(value instanceof LocalDate d ? DATE_FORMAT.format(d) : "");
-            }
-        });
+        tblStudents.setRowHeight(26);
+        tblStudents.setShowGrid(false);
+        tblStudents.setShowHorizontalLines(true);
+        tblStudents.setGridColor(GRID);
+        tblStudents.setIntercellSpacing(new Dimension(0, 1));
+
+        JTableHeader header = tblStudents.getTableHeader();
+        header.setReorderingAllowed(false);
+        header.setFont(header.getFont().deriveFont(Font.BOLD));
 
         JScrollPane scroll = new JScrollPane(tblStudents);
         scroll.setBorder(BorderFactory.createTitledBorder("Danh sách sinh viên"));
@@ -133,6 +162,9 @@ public class StudentPanel extends JPanel {
     }
 
     private JPanel buildButtonBar() {
+        btnAdd.setFont(btnAdd.getFont().deriveFont(Font.BOLD));
+        btnDelete.setForeground(DANGER);
+
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         buttons.add(btnAdd);
         buttons.add(btnUpdate);
@@ -143,6 +175,34 @@ public class StudentPanel extends JPanel {
         bar.add(buttons, BorderLayout.WEST);
         bar.add(lblStatus, BorderLayout.EAST);
         return bar;
+    }
+
+    /**
+     * Gắn model cho bảng rồi đặt độ rộng và cách căn lề từng cột. Phải gọi hàm này
+     * thay vì {@code getTblStudents().setModel(...)}, vì đổi model thì JTable tạo lại cột.
+     */
+    public void setTableModel(StudentTableModel model) {
+        tblStudents.setModel(model);
+
+        TableColumnModel columns = tblStudents.getColumnModel();
+        for (int i = 0; i < COLUMN_WIDTHS.length && i < columns.getColumnCount(); i++) {
+            columns.getColumn(i).setPreferredWidth(COLUMN_WIDTHS[i]);
+            columns.getColumn(i).setMinWidth(Math.min(COLUMN_WIDTHS[i], 80));
+        }
+
+        DefaultTableCellRenderer center = new DefaultTableCellRenderer();
+        center.setHorizontalAlignment(SwingConstants.CENTER);
+        columns.getColumn(StudentTableModel.COL_GENDER).setCellRenderer(center);
+        columns.getColumn(StudentTableModel.COL_INTAKE_YEAR).setCellRenderer(center);
+
+        DefaultTableCellRenderer date = new DefaultTableCellRenderer() {
+            @Override
+            protected void setValue(Object value) {
+                setText(value instanceof LocalDate d ? DATE_FORMAT.format(d) : "");
+            }
+        };
+        date.setHorizontalAlignment(SwingConstants.CENTER);
+        columns.getColumn(StudentTableModel.COL_DOB).setCellRenderer(date);
     }
 
     /** Hiện một dòng thông báo ngắn ở góc phải thanh nút, ví dụ số sinh viên đã tải. */

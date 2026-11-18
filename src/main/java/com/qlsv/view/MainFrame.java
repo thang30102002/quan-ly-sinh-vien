@@ -33,8 +33,8 @@ public class MainFrame extends JFrame {
         tabs.addTab("Báo cáo", placeholder("Thống kê và báo cáo"));
         add(tabs, BorderLayout.CENTER);
 
-        setMinimumSize(new Dimension(1000, 600));
-        setSize(1200, 700);
+        setMinimumSize(new Dimension(1100, 600));
+        setSize(1320, 720);
         setLocationRelativeTo(null);
 
         studentController.loadStudents();
