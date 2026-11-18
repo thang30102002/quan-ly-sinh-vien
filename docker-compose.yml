@@ -16,7 +16,7 @@ services:
       # Chỉ mở trên localhost; mặc định 5435 để không đụng PostgreSQL đã cài sẵn ở 5432
       - "127.0.0.1:${DB_PORT:-5435}:5432"
     volumes:
-      # Chạy schema.sql rồi seed.sql (theo thứ tự tên file), chỉ khi volume còn trống
+      # Chạy schema.sql, seed.sql rồi test-db.sh (theo thứ tự tên file), chỉ khi volume còn trống
       - ./database:/docker-entrypoint-initdb.d:ro
       - qlsv-data:/var/lib/postgresql/data
     healthcheck:
@@ -56,8 +56,10 @@ services:
       db:
         condition: service_healthy
     environment:
-      # Trong mạng Docker, database có host là "db", cổng 5432
-      DB_URL: jdbc:postgresql://db:5432/qlsv
+      # Trong mạng Docker, database có host là "db", cổng 5432.
+      # Trỏ tới qlsv_test vì biến này đè lên db.properties của test; trỏ tới qlsv thì
+      # test DAO sẽ xóa sạch dữ liệu mẫu (#35)
+      DB_URL: jdbc:postgresql://db:5432/qlsv_test
       DB_USER: ${DB_USER:-qlsv}
       DB_PASSWORD: ${DB_PASSWORD:-qlsv}
     volumes:
