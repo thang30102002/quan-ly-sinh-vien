@@ -1,6 +1,7 @@
 package com.qlsv.view;
 
 import com.qlsv.model.Gender;
+import com.qlsv.model.Student;
 import com.qlsv.model.StudentStatus;
 
 import java.awt.BorderLayout;
@@ -15,6 +16,7 @@ import java.awt.Insets;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -34,30 +36,20 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
-/**
- * Màn hình quản lý sinh viên: form bên trái, bảng danh sách bên phải, thanh nút bên dưới.
- * <p>
- * Panel chỉ dựng giao diện. Xử lý sự kiện và gọi Service thuộc về
- * {@link com.qlsv.controller.StudentController}; Panel không chứa SQL.
- */
 public class StudentPanel extends JPanel {
 
-    /** Định dạng ngày sinh người dùng nhập vào form. */
     public static final String DATE_PATTERN = "dd/MM/yyyy";
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
     private static final int FIELD_COLUMNS = 12;
 
-    /** Màu nền dòng chẵn/lẻ xen kẽ cho dễ dò theo hàng. */
     private static final Color ROW_EVEN = Color.WHITE;
     private static final Color ROW_ODD = new Color(0xF3, 0xF6, 0xFA);
     private static final Color GRID = new Color(0xE2, 0xE6, 0xEB);
     private static final Color DANGER = new Color(0xB4, 0x23, 0x18);
 
-    /** Độ rộng ưu tiên của từng cột, theo thứ tự cột trong {@link StudentTableModel}. */
     private static final int[] COLUMN_WIDTHS = {85, 170, 95, 70, 90, 55, 200, 100, 90};
 
-    // Form thông tin sinh viên
     private final JTextField txtStudentCode = new JTextField(FIELD_COLUMNS);
     private final JTextField txtFullName = new JTextField(FIELD_COLUMNS);
     private final JTextField txtDob = new JTextField(FIELD_COLUMNS);
@@ -69,7 +61,6 @@ public class StudentPanel extends JPanel {
             new SpinnerNumberModel(Year.now().getValue(), 1900, 2100, 1));
     private final JComboBox<StudentStatus> cboStatus = new JComboBox<>(StudentStatus.values());
 
-    // Bảng danh sách
     private final JTable tblStudents = new JTable() {
         @Override
         public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
@@ -81,16 +72,21 @@ public class StudentPanel extends JPanel {
         }
     };
 
-    // Thanh nút
     private final JButton btnAdd = new JButton("Thêm");
     private final JButton btnUpdate = new JButton("Sửa");
     private final JButton btnDelete = new JButton("Xóa");
     private final JButton btnRefresh = new JButton("Làm mới");
     private final JLabel lblStatus = new JLabel(" ");
 
+    private final JTextField txtSearch = new JTextField(12);
+    private final JComboBox<String> cboClassFilter = new JComboBox<>();
+    private final JButton btnSearch = new JButton("Tìm kiếm");
+
     public StudentPanel() {
         super(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        cboClassFilter.addItem("Tất cả các lớp");
 
         add(buildForm(), BorderLayout.WEST);
         add(buildTable(), BorderLayout.CENTER);
@@ -98,7 +94,6 @@ public class StudentPanel extends JPanel {
     }
 
     private JPanel buildForm() {
-        // Hiện năm dạng 2026, không có dấu phân cách hàng nghìn
         spnIntakeYear.setEditor(new JSpinner.NumberEditor(spnIntakeYear, "#"));
         txtDob.setToolTipText("Nhập theo dạng " + DATE_PATTERN + ", ví dụ 01/05/2006");
         txtStudentCode.setToolTipText("Ví dụ SV2026001 (BR-01)");
@@ -119,7 +114,6 @@ public class StudentPanel extends JPanel {
         addRow(form, row++, "Khóa *", spnIntakeYear);
         addRow(form, row++, "Trạng thái *", cboStatus);
 
-        // Dòng trống cuối cùng chiếm phần cao còn lại để các ô dồn lên trên
         GridBagConstraints filler = new GridBagConstraints();
         filler.gridy = row;
         filler.weighty = 1;
@@ -142,7 +136,7 @@ public class StudentPanel extends JPanel {
         form.add(field, c);
     }
 
-    private JScrollPane buildTable() {
+    private JPanel buildTable() {
         tblStudents.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblStudents.setAutoCreateRowSorter(true);
         tblStudents.setFillsViewportHeight(true);
@@ -157,8 +151,20 @@ public class StudentPanel extends JPanel {
         header.setFont(header.getFont().deriveFont(Font.BOLD));
 
         JScrollPane scroll = new JScrollPane(tblStudents);
-        scroll.setBorder(BorderFactory.createTitledBorder("Danh sách sinh viên"));
-        return scroll;
+
+        txtSearch.setToolTipText("Tìm theo mã hoặc họ tên");
+        JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        searchBar.add(new JLabel("Tìm kiếm:"));
+        searchBar.add(txtSearch);
+        searchBar.add(new JLabel("Lớp:"));
+        searchBar.add(cboClassFilter);
+        searchBar.add(btnSearch);
+
+        JPanel tablePanel = new JPanel(new BorderLayout(0, 4));
+        tablePanel.setBorder(BorderFactory.createTitledBorder("Danh sách sinh viên"));
+        tablePanel.add(searchBar, BorderLayout.NORTH);
+        tablePanel.add(scroll, BorderLayout.CENTER);
+        return tablePanel;
     }
 
     private JPanel buildButtonBar() {
@@ -177,10 +183,6 @@ public class StudentPanel extends JPanel {
         return bar;
     }
 
-    /**
-     * Gắn model cho bảng rồi đặt độ rộng và cách căn lề từng cột. Phải gọi hàm này
-     * thay vì {@code getTblStudents().setModel(...)}, vì đổi model thì JTable tạo lại cột.
-     */
     public void setTableModel(StudentTableModel model) {
         tblStudents.setModel(model);
 
@@ -205,9 +207,58 @@ public class StudentPanel extends JPanel {
         columns.getColumn(StudentTableModel.COL_DOB).setCellRenderer(date);
     }
 
-    /** Hiện một dòng thông báo ngắn ở góc phải thanh nút, ví dụ số sinh viên đã tải. */
     public void setStatusText(String text) {
         lblStatus.setText(text == null || text.isEmpty() ? " " : text);
+    }
+
+    public void clearForm() {
+        txtStudentCode.setText("");
+        txtStudentCode.setEditable(true);
+        txtFullName.setText("");
+        txtDob.setText("");
+        cboGender.setSelectedItem(Gender.MALE);
+        txtEmail.setText("");
+        txtPhone.setText("");
+        txtClassName.setText("");
+        spnIntakeYear.setValue(Year.now().getValue());
+        cboStatus.setSelectedItem(StudentStatus.STUDYING);
+        tblStudents.clearSelection();
+    }
+
+    public void setStudentToForm(Student s) {
+        if (s == null) {
+            clearForm();
+            return;
+        }
+        txtStudentCode.setText(s.getStudentCode());
+        txtStudentCode.setEditable(false);
+        txtFullName.setText(s.getFullName());
+        txtDob.setText(s.getDob() != null ? DATE_FORMAT.format(s.getDob()) : "");
+        cboGender.setSelectedItem(s.getGender());
+        txtEmail.setText(s.getEmail() != null ? s.getEmail() : "");
+        txtPhone.setText(s.getPhone() != null ? s.getPhone() : "");
+        txtClassName.setText(s.getClassName() != null ? s.getClassName() : "");
+        spnIntakeYear.setValue(s.getIntakeYear());
+        cboStatus.setSelectedItem(s.getStatus());
+    }
+
+    public void updateClassFilter(List<String> classes) {
+        String currentSelection = (String) cboClassFilter.getSelectedItem();
+        cboClassFilter.removeAllItems();
+        cboClassFilter.addItem("Tất cả các lớp");
+        if (classes != null) {
+            for (String c : classes) {
+                if (c != null && !c.isBlank()) {
+                    cboClassFilter.addItem(c);
+                }
+            }
+        }
+        if (currentSelection != null) {
+            cboClassFilter.setSelectedItem(currentSelection);
+        }
+        if (cboClassFilter.getSelectedIndex() < 0) {
+            cboClassFilter.setSelectedIndex(0);
+        }
     }
 
     public JTextField getTxtStudentCode() { return txtStudentCode; }
@@ -220,14 +271,14 @@ public class StudentPanel extends JPanel {
     public JSpinner getSpnIntakeYear() { return spnIntakeYear; }
     public JComboBox<StudentStatus> getCboStatus() { return cboStatus; }
 
-    /**
-     * Bảng có sắp xếp khi bấm tiêu đề cột, nên chỉ số dòng trên bảng có thể khác chỉ số
-     * trong model: dùng {@code convertRowIndexToModel} trước khi lấy sinh viên ra.
-     */
     public JTable getTblStudents() { return tblStudents; }
 
     public JButton getBtnAdd() { return btnAdd; }
     public JButton getBtnUpdate() { return btnUpdate; }
     public JButton getBtnDelete() { return btnDelete; }
     public JButton getBtnRefresh() { return btnRefresh; }
+
+    public JTextField getTxtSearch() { return txtSearch; }
+    public JComboBox<String> getCboClassFilter() { return cboClassFilter; }
+    public JButton getBtnSearch() { return btnSearch; }
 }
