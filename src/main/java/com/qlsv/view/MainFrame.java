@@ -19,7 +19,7 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Sinh viên", placeholder("Quản lý sinh viên"));
+        tabs.addTab("Sinh viên", new StudentPanel());
         // Các tab dưới đây sẽ được thay bằng Panel thật ở #9, #12, #14, #16
         tabs.addTab("Học phần", placeholder("Học phần"));
         tabs.addTab("Đăng ký", placeholder("Đăng ký học phần"));
