@@ -17,18 +17,20 @@ Trạng thái hiện tại: có tài liệu (`docs/`), SQL (`database/`), môi t
 ## Lệnh
 
 ```bash
-# Database (lần đầu: cp .env.example .env). Volume trống thì tự chạy schema.sql rồi seed.sql
+# Database (lần đầu: cp .env.example .env). Volume trống thì tự chạy schema.sql, seed.sql vào qlsv
+# rồi test-db.sh tạo qlsv_test (chỉ có bảng) cho JUnit. Volume cũ thiếu qlsv_test: xem docs/docker.md mục 3
 docker compose up -d                               # bật PostgreSQL + pgAdmin (http://localhost:5050)
 docker compose down -v && docker compose up -d     # tạo lại từ đầu sau khi sửa script
 docker compose exec -T db psql -U qlsv -d qlsv -v ON_ERROR_STOP=1 < database/schema.sql   # chạy lại không xóa volume
 docker compose exec db psql -U qlsv -d qlsv        # mở psql
 
-# Maven (test cần database Docker đang chạy)
+# Maven (test cần database Docker đang chạy; test dùng qlsv_test qua src/test/resources/db.properties)
 mvn clean package                      # build ra target/qlsv.jar
 mvn test                               # chạy toàn bộ test
 mvn test -Dtest=<TênClassTest>                # một class
 mvn test -Dtest=<TênClassTest>#<tênMethod>    # một method
-java -jar target/qlsv.jar
+java -jar target/qlsv.jar                          # chưa chạy được cho tới #75 (thiếu Main-Class, driver)
+mvn -q compile exec:java -Dexec.mainClass=com.qlsv.Main   # chạy app khi đang phát triển
 docker compose run --rm maven mvn test             # khi máy chưa cài Maven
 ```
 

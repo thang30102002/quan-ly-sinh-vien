@@ -6,7 +6,7 @@ Docker chạy database PostgreSQL 16 có sẵn dữ liệu mẫu, kèm pgAdmin �
 
 | Service | Bật bằng | Dùng để |
 |---|---|---|
-| `db` | `docker compose up -d` | PostgreSQL 16, database `qlsv` |
+| `db` | `docker compose up -d` | PostgreSQL 16, database `qlsv` (app) và `qlsv_test` (JUnit) |
 | `pgadmin` | `docker compose up -d` (bật cùng `db`) | Giao diện web để xem, truy vấn dữ liệu và vẽ ERD. App không cần nó |
 | `maven` | `docker compose run --rm maven mvn ...` | Build/test khi máy chưa cài Maven (tùy chọn) |
 
@@ -21,7 +21,14 @@ Docker chạy database PostgreSQL 16 có sẵn dữ liệu mẫu, kèm pgAdmin �
    docker compose ps        # qlsv-db phải ở trạng thái "healthy", qlsv-pgadmin "running"
    ```
 
-Lần đầu khởi động, Docker tạo database `qlsv` rồi chạy `database/schema.sql`, sau đó `database/seed.sql`. Container chỉ chuyển sang `healthy` khi đã nạp xong dữ liệu mẫu.
+Lần đầu khởi động, Docker chạy các file trong `database/` theo thứ tự tên file:
+
+1. `schema.sql` rồi `seed.sql` vào database `qlsv` (có dữ liệu mẫu, dùng cho app).
+2. `test-db.sh` tạo database `qlsv_test` và chạy `schema.sql` vào đó (bảng trống, dùng cho `mvn test`). Test DAO xóa dữ liệu trước và sau mỗi test, nên phải tách khỏi `qlsv`.
+
+Container chỉ chuyển sang `healthy` khi đã chạy xong cả ba file.
+
+Volume tạo trước khi có `test-db.sh` (trước #7) sẽ không có `qlsv_test`. Tạo tay một lần bằng lệnh ở mục 3.
 
 ## 2. Thông tin kết nối
 
@@ -31,7 +38,7 @@ Giá trị mặc định lấy từ `.env.example`:
 |---|---|---|
 | Host | `localhost` | `db` |
 | Cổng | `5435` (`DB_PORT`) | `5432` |
-| Database | `qlsv` | `qlsv` |
+| Database | `qlsv` (app), `qlsv_test` (test) | `qlsv_test` (service `maven`), `qlsv` (pgAdmin) |
 | User / mật khẩu | `qlsv` / `qlsv` (`DB_USER`, `DB_PASSWORD`) | như bên trái |
 | JDBC URL | `jdbc:postgresql://localhost:5435/qlsv` | `jdbc:postgresql://db:5432/qlsv` |
 
@@ -45,7 +52,9 @@ db.user=qlsv
 db.password=qlsv
 ```
 
-Service `maven` truyền sẵn biến môi trường `DB_URL`, `DB_USER`, `DB_PASSWORD` trỏ tới `db:5432`. Vì vậy `DBConnection` nên ưu tiên đọc các biến này khi có, nếu không có thì mới dùng `db.properties`. Có như vậy test mới chạy được cả trên máy thật lẫn trong container.
+Khi chạy test, `src/test/resources/db.properties` được dùng thay file trên và trỏ tới `jdbc:postgresql://localhost:5435/qlsv_test`. Đổi `DB_PORT` thì sửa cả hai file.
+
+Service `maven` truyền sẵn biến môi trường `DB_URL`, `DB_USER`, `DB_PASSWORD` trỏ tới `db:5432/qlsv_test`. `DBConnection` ưu tiên các biến này hơn `db.properties`, nên test chạy được cả trên máy thật lẫn trong container. Đừng đổi `DB_URL` của service này về `qlsv`, nếu không `mvn test` sẽ xóa sạch dữ liệu mẫu.
 
 ## 3. Lệnh hay dùng
 
@@ -60,6 +69,13 @@ docker compose down -v && docker compose up -d
 # Chạy lại script mà không xóa volume
 docker compose exec -T db psql -U qlsv -d qlsv -v ON_ERROR_STOP=1 < database/schema.sql
 docker compose exec -T db psql -U qlsv -d qlsv -v ON_ERROR_STOP=1 < database/seed.sql
+
+# Tạo database test (chỉ cần khi volume có từ trước khi có test-db.sh)
+docker compose exec -T db createdb -U qlsv qlsv_test
+docker compose exec -T db psql -U qlsv -d qlsv_test -v ON_ERROR_STOP=1 -q < database/schema.sql
+
+# Sửa schema.sql thì chạy lại cho cả qlsv_test (không chạy seed.sql vào qlsv_test)
+docker compose exec -T db psql -U qlsv -d qlsv_test -v ON_ERROR_STOP=1 -q < database/schema.sql
 
 # Mở psql để gõ truy vấn
 docker compose exec db psql -U qlsv -d qlsv
@@ -86,6 +102,8 @@ pgAdmin tự bật cùng database khi chạy `docker compose up -d`. Muốn tắ
 | `Ports are not available ... address already in use` | Cổng đã có chương trình khác dùng. Đổi `DB_PORT` hoặc `PGADMIN_PORT` trong `.env`, rồi sửa `db.properties` cho khớp |
 | Sửa `schema.sql`/`seed.sql` nhưng database không đổi | Script chỉ tự chạy khi volume còn trống: `docker compose down -v && docker compose up -d` |
 | Đổi `DB_USER`/`DB_PASSWORD` trong `.env` mà không đăng nhập được | Tài khoản chỉ được tạo khi volume còn trống. Chạy `docker compose down -v` rồi `up` lại |
+| Test báo `database "qlsv_test" does not exist` | Volume có từ trước khi có `test-db.sh`. Tạo tay bằng lệnh ở mục 3 |
+| Test báo lỗi lệch cột/bảng sau khi kéo code mới | `schema.sql` đã đổi nhưng `qlsv_test` còn cấu trúc cũ. Chạy lại `schema.sql` vào `qlsv_test` (mục 3) |
 | `qlsv-db` mãi không `healthy` | Xem `docker compose logs db`. Thường là script SQL bị lỗi, và log sẽ chỉ ra dòng lỗi |
 | `Cannot connect to the Docker daemon` | Docker Desktop chưa chạy |
 | App báo `Connection refused` | Kiểm tra `docker compose ps` và cổng trong `db.properties` có khớp `DB_PORT` không |
