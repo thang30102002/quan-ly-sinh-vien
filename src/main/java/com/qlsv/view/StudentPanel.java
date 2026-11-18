@@ -8,7 +8,9 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.time.LocalDate;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -22,6 +24,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 /**
  * Màn hình quản lý sinh viên: form bên trái, bảng danh sách bên phải, thanh nút bên dưới.
@@ -33,6 +36,7 @@ public class StudentPanel extends JPanel {
 
     /** Định dạng ngày sinh người dùng nhập vào form. */
     public static final String DATE_PATTERN = "dd/MM/yyyy";
+    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
     private static final int FIELD_COLUMNS = 18;
 
@@ -116,6 +120,12 @@ public class StudentPanel extends JPanel {
         tblStudents.setAutoCreateRowSorter(true);
         tblStudents.setFillsViewportHeight(true);
         tblStudents.getTableHeader().setReorderingAllowed(false);
+        tblStudents.setDefaultRenderer(LocalDate.class, new DefaultTableCellRenderer() {
+            @Override
+            protected void setValue(Object value) {
+                setText(value instanceof LocalDate d ? DATE_FORMAT.format(d) : "");
+            }
+        });
 
         JScrollPane scroll = new JScrollPane(tblStudents);
         scroll.setBorder(BorderFactory.createTitledBorder("Danh sách sinh viên"));

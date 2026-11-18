@@ -1,5 +1,8 @@
 package com.qlsv.view;
 
+import com.qlsv.controller.StudentController;
+import com.qlsv.service.StudentService;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 
@@ -18,8 +21,11 @@ public class MainFrame extends JFrame {
         super("Quản lý Sinh viên & Điểm số");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        StudentPanel studentPanel = new StudentPanel();
+        StudentController studentController = new StudentController(studentPanel, new StudentService());
+
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Sinh viên", new StudentPanel());
+        tabs.addTab("Sinh viên", studentPanel);
         // Các tab dưới đây sẽ được thay bằng Panel thật ở #9, #12, #14, #16
         tabs.addTab("Học phần", placeholder("Học phần"));
         tabs.addTab("Đăng ký", placeholder("Đăng ký học phần"));
@@ -30,6 +36,8 @@ public class MainFrame extends JFrame {
         setMinimumSize(new Dimension(1000, 600));
         setSize(1200, 700);
         setLocationRelativeTo(null);
+
+        studentController.loadStudents();
     }
 
     private static JPanel placeholder(String feature) {
