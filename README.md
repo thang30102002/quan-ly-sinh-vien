@@ -85,7 +85,7 @@ Theo dõi tiến độ tại [Milestones](https://github.com/thang30102002/quan-
 > Phần này sẽ được hoàn thiện ở [#20](https://github.com/thang30102002/quan-ly-sinh-vien/issues/20).
 
 1. Cài JDK 17 và [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-2. Tạo database (tự chạy `database/schema.sql` rồi `database/seed.sql`):
+2. Tạo database `qlsv` (tự chạy `database/schema.sql` rồi `database/seed.sql`) và database test `qlsv_test` (`database/test-db.sh`):
    ```bash
    cp .env.example .env
    docker compose up -d
