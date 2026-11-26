@@ -11,9 +11,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
-import javax.swing.JOptionPane;
-import javax.swing.JTable;
-
 /**
  * Xử lý sự kiện của {@link SemesterPanel}: thêm, sửa, xóa, mở/đóng đăng ký học kỳ.
  */
@@ -73,9 +70,11 @@ public class SemesterController {
             return;
         }
         try {
-            service.update(readForm(selectedId));
+            int id = selectedId;
+            service.update(readForm(id));
             info("Cập nhật học kỳ thành công!");
             loadSemesters();
+            selectSemester(id);
         } catch (ValidationException | BusinessException ex) {
             error(ex.getMessage());
         }
@@ -87,10 +86,8 @@ public class SemesterController {
             warning("Vui lòng chọn một học kỳ từ bảng để xóa!");
             return;
         }
-        int confirm = dialogs.showConfirm(view,
-                "Bạn có chắc chắn muốn xóa học kỳ " + s.getSemesterCode() + " - " + s.getName() + "?",
-                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (!dialogs.confirmDelete(view,
+                "Bạn có chắc chắn muốn xóa học kỳ " + s.getSemesterCode() + " - " + s.getName() + "?")) {
             return;
         }
         try {
@@ -128,8 +125,8 @@ public class SemesterController {
     }
 
     private Semester readForm(Integer id) {
-        LocalDate start = FormInputs.readDate(view.getTxtStartDate().getText(), "Ngày bắt đầu");
-        LocalDate end = FormInputs.readDate(view.getTxtEndDate().getText(), "Ngày kết thúc");
+        LocalDate start = FormInputs.readDate(view.getTxtStartDate().getText(), "Ngày bắt đầu", "BR-19");
+        LocalDate end = FormInputs.readDate(view.getTxtEndDate().getText(), "Ngày kết thúc", "BR-19");
         Semester s = new Semester(view.getTxtSemesterCode().getText(), view.getTxtName().getText(),
                 start, end, view.getChkOpen().isSelected());
         s.setId(id);
@@ -137,9 +134,12 @@ public class SemesterController {
     }
 
     private Semester selectedSemester() {
-        JTable table = view.getTblSemesters();
-        int viewRow = table.getSelectedRow();
-        return viewRow >= 0 ? tableModel.getItemAt(table.convertRowIndexToModel(viewRow)) : null;
+        return tableModel.getSelectedItem(view.getTblSemesters());
+    }
+
+    /** Chọn lại dòng của học kỳ có id này (tải lại bảng làm JTable bỏ chọn). */
+    private void selectSemester(int id) {
+        tableModel.selectFirst(view.getTblSemesters(), s -> s.getId() == id);
     }
 
     private void resetForm() {
@@ -148,14 +148,14 @@ public class SemesterController {
     }
 
     private void info(String message) {
-        dialogs.showMessage(view, message, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        dialogs.info(view, message);
     }
 
     private void warning(String message) {
-        dialogs.showMessage(view, message, "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+        dialogs.warning(view, message);
     }
 
     private void error(String message) {
-        dialogs.showMessage(view, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        dialogs.error(view, message);
     }
 }

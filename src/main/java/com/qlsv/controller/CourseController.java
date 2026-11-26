@@ -10,9 +10,6 @@ import com.qlsv.view.CourseTableModel;
 import java.util.List;
 import java.util.Objects;
 
-import javax.swing.JOptionPane;
-import javax.swing.JTable;
-
 /**
  * Xử lý sự kiện của {@link CoursePanel}: thêm, sửa, xóa, tìm kiếm học phần.
  */
@@ -74,9 +71,11 @@ public class CourseController {
             return;
         }
         try {
-            service.update(readForm(selectedId));
+            int id = selectedId;
+            service.update(readForm(id));
             info("Cập nhật học phần thành công!");
             loadCourses();
+            selectCourse(id);
         } catch (ValidationException | BusinessException ex) {
             error(ex.getMessage());
         }
@@ -88,10 +87,8 @@ public class CourseController {
             warning("Vui lòng chọn một học phần từ bảng để xóa!");
             return;
         }
-        int confirm = dialogs.showConfirm(view,
-                "Bạn có chắc chắn muốn xóa học phần " + c.getCourseCode() + " - " + c.getName() + "?",
-                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (!dialogs.confirmDelete(view,
+                "Bạn có chắc chắn muốn xóa học phần " + c.getCourseCode() + " - " + c.getName() + "?")) {
             return;
         }
         try {
@@ -141,7 +138,7 @@ public class CourseController {
     }
 
     private Course readForm(Integer id) {
-        int credits = FormInputs.readInt(view.getSpnCredits(), "Số tín chỉ");
+        int credits = FormInputs.readInt(view.getSpnCredits(), "Số tín chỉ", "BR-18");
         Course c = new Course(view.getTxtCourseCode().getText(), view.getTxtName().getText(),
                 credits, view.getTxtDescription().getText());
         c.setId(id);
@@ -149,9 +146,12 @@ public class CourseController {
     }
 
     private Course selectedCourse() {
-        JTable table = view.getTblCourses();
-        int viewRow = table.getSelectedRow();
-        return viewRow >= 0 ? tableModel.getItemAt(table.convertRowIndexToModel(viewRow)) : null;
+        return tableModel.getSelectedItem(view.getTblCourses());
+    }
+
+    /** Chọn lại dòng của học phần có id này (tải lại bảng làm JTable bỏ chọn). */
+    private void selectCourse(int id) {
+        tableModel.selectFirst(view.getTblCourses(), c -> c.getId() == id);
     }
 
     private void resetForm() {
@@ -160,14 +160,14 @@ public class CourseController {
     }
 
     private void info(String message) {
-        dialogs.showMessage(view, message, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        dialogs.info(view, message);
     }
 
     private void warning(String message) {
-        dialogs.showMessage(view, message, "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+        dialogs.warning(view, message);
     }
 
     private void error(String message) {
-        dialogs.showMessage(view, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        dialogs.error(view, message);
     }
 }

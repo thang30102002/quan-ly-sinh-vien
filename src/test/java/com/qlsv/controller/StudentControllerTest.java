@@ -11,10 +11,10 @@ import com.qlsv.model.Gender;
 import com.qlsv.model.Student;
 import com.qlsv.model.StudentStatus;
 import com.qlsv.service.StudentService;
+import com.qlsv.testutil.RecordingDialogHandler;
 import com.qlsv.view.StudentPanel;
 import com.qlsv.view.StudentTableModel;
 
-import java.awt.Component;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -26,32 +26,13 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
+import javax.swing.SwingUtilities;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class StudentControllerTest {
-
-    private static class RecordingDialogHandler implements StudentController.DialogHandler {
-        String lastMessage;
-        String lastTitle;
-        int lastMessageType;
-        int confirmResponse = JOptionPane.YES_OPTION;
-
-        @Override
-        public void showMessage(Component parent, Object message, String title, int messageType) {
-            this.lastMessage = String.valueOf(message);
-            this.lastTitle = title;
-            this.lastMessageType = messageType;
-        }
-
-        @Override
-        public int showConfirm(Component parent, Object message, String title, int optionType) {
-            this.lastMessage = String.valueOf(message);
-            this.lastTitle = title;
-            return confirmResponse;
-        }
-    }
 
     private static class MemoryStudentDAO implements StudentDAO {
         final Map<Integer, Student> data = new LinkedHashMap<>();
@@ -161,7 +142,7 @@ class StudentControllerTest {
                 Gender.FEMALE, "binh@example.com", "0987654321", "CNTT-K26B", 2026, StudentStatus.STUDYING);
         service.add(s1);
         service.add(s2);
-        controller.getTableModel().setStudents(service.findAll());
+        controller.getTableModel().setItems(service.findAll());
     }
 
     @Test
@@ -232,6 +213,77 @@ class StudentControllerTest {
 
         assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
         assertTrue(dialog.lastMessage.contains("đã tồn tại"));
+    }
+
+    /**
+     * Bug B1: gõ năm vào ô Khóa rồi bấm Thêm ngay (chưa nhấn Enter) thì giá trị vừa gõ bị
+     * bỏ qua, mã SV2025xxx bị báo không khớp khóa dù người dùng đã gõ 2025.
+     */
+    @Test
+    void onAddStudent_khoaVuaGoChuaNhanEnter_vanLayGiaTriVuaGo() {
+        panel.getTxtStudentCode().setText("SV2025003");
+        panel.getTxtFullName().setText("Lê Văn Cường");
+        panel.getTxtDob().setText("20/10/2006");
+        panel.getTxtClassName().setText("CNTT-K25A");
+        panel.getSpnIntakeYear().setValue(2026);
+        ((JSpinner.DefaultEditor) panel.getSpnIntakeYear().getEditor()).getTextField().setText("2025");
+
+        controller.onAddStudent();
+
+        assertEquals("Thêm sinh viên thành công!", dialog.lastMessage);
+        assertEquals(2025, dao.data.get(3).getIntakeYear());
+    }
+
+    @Test
+    void onAddStudent_khoaKhongPhaiSo_baoLoi() {
+        panel.getTxtStudentCode().setText("SV2026003");
+        panel.getTxtFullName().setText("Lê Văn Cường");
+        panel.getTxtDob().setText("20/10/2006");
+        panel.getTxtClassName().setText("CNTT-K26A");
+        ((JSpinner.DefaultEditor) panel.getSpnIntakeYear().getEditor()).getTextField().setText("abc");
+
+        controller.onAddStudent();
+
+        assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
+        assertTrue(dialog.lastMessage.contains("Khóa"));
+        assertNull(dao.data.get(3));
+    }
+
+    /** Bug B2: sửa xong bảng tải lại làm mất dòng đang chọn, bấm Sửa lần hai bị báo "chưa chọn". */
+    @Test
+    void onUpdateStudent_thanhCong_vanChonDongVuaSua_suaTiepDuoc() throws Exception {
+        panel.getTblStudents().setRowSelectionInterval(0, 0);
+        controller.onRowSelected();
+        panel.getTxtFullName().setText("Nguyễn Văn An Cập Nhật");
+
+        controller.onUpdateStudent();
+        waitForLoad();
+
+        assertEquals("Cập nhật sinh viên thành công!", dialog.lastMessage);
+        assertEquals(1, controller.getSelectedStudentId());
+        Student selected = controller.getTableModel().getSelectedItem(panel.getTblStudents());
+        assertNotNull(selected);
+        assertEquals("Nguyễn Văn An Cập Nhật", selected.getFullName());
+
+        panel.getTxtEmail().setText("an_new@example.com");
+        controller.onUpdateStudent();
+        waitForLoad();
+
+        assertEquals("Cập nhật sinh viên thành công!", dialog.lastMessage);
+        assertEquals("an_new@example.com", dao.data.get(1).getEmail());
+    }
+
+    /** Chờ SwingWorker của loadStudents tải xong (nút Làm mới bật lại trong done()). */
+    private void waitForLoad() throws Exception {
+        long deadline = System.currentTimeMillis() + 5000;
+        do {
+            SwingUtilities.invokeAndWait(() -> { });
+            if (panel.getBtnRefresh().isEnabled()) {
+                return;
+            }
+            Thread.sleep(5);
+        } while (System.currentTimeMillis() < deadline);
+        throw new AssertionError("Quá 5 giây vẫn chưa tải xong danh sách sinh viên");
     }
 
     @Test

@@ -8,6 +8,7 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -22,12 +23,20 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
 /**
- * Kiểu dáng dùng chung cho các Panel học phần, học kỳ, lớp học phần (giống StudentPanel).
+ * Kiểu dáng và định dạng dùng chung cho các Panel.
  */
 public final class UiStyles {
 
-    public static final String DATE_PATTERN = StudentPanel.DATE_PATTERN;
-    public static final DateTimeFormatter DATE_FORMAT = StudentPanel.DATE_FORMAT;
+    /** Định dạng ngày hiển thị cho người dùng trong hướng dẫn và thông báo lỗi. */
+    public static final String DATE_PATTERN = "dd/MM/yyyy";
+
+    /**
+     * Định dạng ngày nhập và hiển thị trên mọi form, bảng. STRICT để ngày không có thật
+     * như 31/02/2006 bị báo lỗi thay vì tự đổi thành 28/02/2006; STRICT cần "uuuu"
+     * (năm) thay cho "yyyy" (năm theo kỷ nguyên).
+     */
+    public static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
 
     private static final Color ROW_EVEN = Color.WHITE;
     private static final Color ROW_ODD = new Color(0xF3, 0xF6, 0xFA);

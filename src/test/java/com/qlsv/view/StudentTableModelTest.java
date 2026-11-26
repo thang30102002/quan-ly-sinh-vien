@@ -51,7 +51,7 @@ class StudentTableModelTest {
     @Test
     void getValueAt_traVeDungTungCot() {
         StudentTableModel model = new StudentTableModel();
-        model.setStudents(List.of(sample()));
+        model.setItems(List.of(sample()));
 
         assertEquals(1, model.getRowCount());
         assertEquals("SV2026001", model.getValueAt(0, StudentTableModel.COL_CODE));
@@ -71,7 +71,7 @@ class StudentTableModelTest {
         Student s = sample();
         s.setGender(Gender.FEMALE);
         s.setStatus(StudentStatus.DROPPED);
-        model.setStudents(List.of(s));
+        model.setItems(List.of(s));
 
         // JTable hiển thị giá trị bằng toString()
         assertEquals("Nữ", model.getValueAt(0, StudentTableModel.COL_GENDER).toString());
@@ -84,7 +84,7 @@ class StudentTableModelTest {
         Student s = sample();
         s.setEmail(null);
         s.setPhone(null);
-        model.setStudents(List.of(s));
+        model.setItems(List.of(s));
 
         assertNull(model.getValueAt(0, StudentTableModel.COL_EMAIL));
         assertNull(model.getValueAt(0, StudentTableModel.COL_PHONE));
@@ -101,56 +101,56 @@ class StudentTableModelTest {
     @Test
     void khongChoSuaOTrongBang() {
         StudentTableModel model = new StudentTableModel();
-        model.setStudents(List.of(sample()));
+        model.setItems(List.of(sample()));
         for (int col = 0; col < model.getColumnCount(); col++) {
             assertFalse(model.isCellEditable(0, col), "Cột " + col + " không được sửa trực tiếp");
         }
     }
 
     @Test
-    void setStudents_thayToanBoDuLieuVaBaoChoBang() {
+    void setItems_thayToanBoDuLieuVaBaoChoBang() {
         StudentTableModel model = new StudentTableModel();
         List<TableModelEvent> events = new ArrayList<>();
         model.addTableModelListener(events::add);
 
-        model.setStudents(List.of(sample(), sample()));
+        model.setItems(List.of(sample(), sample()));
         assertEquals(2, model.getRowCount());
 
-        model.setStudents(List.of(sample()));
+        model.setItems(List.of(sample()));
         assertEquals(1, model.getRowCount());
         assertEquals(2, events.size());
     }
 
     @Test
-    void setStudents_null_xoaHetDong() {
+    void setItems_null_xoaHetDong() {
         StudentTableModel model = new StudentTableModel();
-        model.setStudents(List.of(sample()));
-        model.setStudents(null);
+        model.setItems(List.of(sample()));
+        model.setItems(null);
         assertEquals(0, model.getRowCount());
     }
 
     @Test
-    void setStudents_saoChepDanhSach_khongPhuThuocListGoc() {
+    void setItems_saoChepDanhSach_khongPhuThuocListGoc() {
         StudentTableModel model = new StudentTableModel();
         List<Student> source = new ArrayList<>(List.of(sample()));
-        model.setStudents(source);
+        model.setItems(source);
 
         source.clear();
         assertEquals(1, model.getRowCount());
     }
 
     @Test
-    void getStudentAt_traVeDungDoiTuong() {
+    void getItemAt_traVeDungDoiTuong() {
         StudentTableModel model = new StudentTableModel();
         Student s = sample();
-        model.setStudents(List.of(s));
-        assertSame(s, model.getStudentAt(0));
+        model.setItems(List.of(s));
+        assertSame(s, model.getItemAt(0));
     }
 
     @Test
     void cotKhongTonTai_nemLoi() {
         StudentTableModel model = new StudentTableModel();
-        model.setStudents(List.of(sample()));
+        model.setItems(List.of(sample()));
         assertThrows(IndexOutOfBoundsException.class, () -> model.getValueAt(0, 9));
     }
 }

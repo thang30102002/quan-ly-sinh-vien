@@ -15,7 +15,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.LocalDate;
 import java.time.Year;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -37,9 +36,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
 public class StudentPanel extends JPanel {
-
-    public static final String DATE_PATTERN = "dd/MM/yyyy";
-    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
     private static final int FIELD_COLUMNS = 12;
 
@@ -95,7 +91,7 @@ public class StudentPanel extends JPanel {
 
     private JPanel buildForm() {
         spnIntakeYear.setEditor(new JSpinner.NumberEditor(spnIntakeYear, "#"));
-        txtDob.setToolTipText("Nhập theo dạng " + DATE_PATTERN + ", ví dụ 01/05/2006");
+        txtDob.setToolTipText("Nhập theo dạng " + UiStyles.DATE_PATTERN + ", ví dụ 01/05/2006");
         txtStudentCode.setToolTipText("Ví dụ SV2026001 (BR-01)");
         txtPhone.setToolTipText("10 chữ số, bắt đầu bằng 0 (BR-17)");
         spnIntakeYear.setToolTipText("Năm nhập học, trùng với 4 số sau SV trong mã (BR-01)");
@@ -200,7 +196,7 @@ public class StudentPanel extends JPanel {
         DefaultTableCellRenderer date = new DefaultTableCellRenderer() {
             @Override
             protected void setValue(Object value) {
-                setText(value instanceof LocalDate d ? DATE_FORMAT.format(d) : "");
+                setText(value instanceof LocalDate d ? UiStyles.DATE_FORMAT.format(d) : "");
             }
         };
         date.setHorizontalAlignment(SwingConstants.CENTER);
@@ -233,7 +229,7 @@ public class StudentPanel extends JPanel {
         txtStudentCode.setText(s.getStudentCode());
         txtStudentCode.setEditable(false);
         txtFullName.setText(s.getFullName());
-        txtDob.setText(s.getDob() != null ? DATE_FORMAT.format(s.getDob()) : "");
+        txtDob.setText(s.getDob() != null ? UiStyles.DATE_FORMAT.format(s.getDob()) : "");
         cboGender.setSelectedItem(s.getGender());
         txtEmail.setText(s.getEmail() != null ? s.getEmail() : "");
         txtPhone.setText(s.getPhone() != null ? s.getPhone() : "");
