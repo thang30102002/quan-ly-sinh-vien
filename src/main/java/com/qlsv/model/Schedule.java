@@ -54,10 +54,32 @@ public class Schedule {
     public String getRoom() { return room; }
     public void setRoom(String room) { this.room = room; }
 
+    /**
+     * BR-22: hai buổi trùng nhau khi cùng thứ và khoảng tiết giao nhau
+     * ({@code startA ≤ endB && startB ≤ endA}). Hai buổi chỉ kề nhau (tiết 1–3 và 4–6)
+     * thì không trùng. Không so sánh lớp học phần; dùng cho BR-21 (các buổi trong một lớp)
+     * và BR-22 (lịch của sinh viên, #11).
+     *
+     * @return false nếu {@code other} là null
+     */
+    public boolean overlaps(Schedule other) {
+        if (other == null) {
+            return false;
+        }
+        return dayOfWeek == other.dayOfWeek
+                && startPeriod <= other.endPeriod
+                && other.startPeriod <= endPeriod;
+    }
+
+    /** Nhãn tiếng Việt của thứ theo quy ước CSDL: 2 → "Thứ 2", 8 → "Chủ nhật". */
+    public static String dayLabel(int dayOfWeek) {
+        return dayOfWeek == 8 ? "Chủ nhật" : "Thứ " + dayOfWeek;
+    }
+
     /** Dạng "Thứ 2, tiết 1–3, phòng A101"; không in lớp học phần. */
     @Override
     public String toString() {
-        String day = dayOfWeek == 8 ? "Chủ nhật" : "Thứ " + dayOfWeek;
+        String day = dayLabel(dayOfWeek);
         String periods = startPeriod == endPeriod
                 ? "tiết " + startPeriod
                 : "tiết " + startPeriod + "–" + endPeriod;
