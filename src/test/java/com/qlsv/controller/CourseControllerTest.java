@@ -14,6 +14,7 @@ import com.qlsv.view.CoursePanel;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +42,11 @@ class CourseControllerTest {
         dialog = new RecordingDialogHandler();
         controller.setDialogHandler(dialog);
         controller.loadCourses();
+    }
+
+    @AfterEach
+    void khongHienMaBR() {
+        dialog.assertNoRuleCodes();
     }
 
     private void selectRow(int row) {
@@ -73,7 +79,8 @@ class CourseControllerTest {
 
     /**
      * Bug B3: gõ 7 vào ô tín chỉ (khoảng 1–6) bị báo "phải là số nguyên" thay vì báo khoảng
-     * cho phép theo BR-18.
+     * cho phép theo BR-18. Chữ "7" còn trong ô vì ô giữ chữ khi mất focus
+     * (UiStyles.keepTypedTextOnFocusLost).
      */
     @Test
     void onAdd_goTinChiNgoaiKhoang_baoDungKhoangBR18() {
@@ -84,7 +91,7 @@ class CourseControllerTest {
         controller.onAdd();
 
         assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
-        assertEquals("Số tín chỉ phải từ 1 đến 6 (BR-18)", dialog.lastMessage);
+        assertEquals("Số tín chỉ phải từ 1 đến 6", dialog.lastMessage);
         assertEquals(2, dao.byId.size());
     }
 
@@ -136,7 +143,8 @@ class CourseControllerTest {
         controller.onDelete();
 
         assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
-        assertTrue(dialog.lastMessage.contains("BR-16"));
+        assertEquals("Không xóa được học phần IT102 vì đã mở lớp học phần,"
+                + " hãy xóa các lớp của học phần này trước", dialog.lastMessage);
         assertNotNull(dao.byId.get(it102.getId()));
     }
 

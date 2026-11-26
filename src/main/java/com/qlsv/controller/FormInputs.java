@@ -37,7 +37,13 @@ final class FormInputs {
         throw new ValidationException(fieldName + " phải là số nguyên" + ruleSuffix(rule));
     }
 
-    /** Đọc ngày dạng dd/MM/yyyy; để trống thì báo bắt buộc. */
+    /** Thông báo khi ngày đúng dạng dd/MM/yyyy nhưng không có trên lịch, vd 31/02/2006. */
+    static final String DATE_NOT_EXIST = "Ngày bạn nhập không tồn tại. Vui lòng kiểm tra lại.";
+
+    /**
+     * Đọc ngày dạng dd/MM/yyyy; để trống thì báo bắt buộc. Đúng dạng nhưng không có trên
+     * lịch (31/02, 29/02 năm không nhuận, tháng 13) thì báo {@link #DATE_NOT_EXIST}.
+     */
     static LocalDate readDate(String text, String fieldName, String rule) {
         String value = text == null ? "" : text.trim();
         if (value.isEmpty()) {
@@ -46,6 +52,9 @@ final class FormInputs {
         try {
             return LocalDate.parse(value, UiStyles.DATE_FORMAT);
         } catch (DateTimeParseException e) {
+            if (value.matches("\\d{2}/\\d{2}/\\d{4}")) {
+                throw new ValidationException(DATE_NOT_EXIST + ruleSuffix(rule));
+            }
             throw new ValidationException(fieldName + " không đúng định dạng " + UiStyles.DATE_PATTERN
                     + ", ví dụ 07/09/2026" + ruleSuffix(rule));
         }

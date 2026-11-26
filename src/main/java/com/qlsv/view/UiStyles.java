@@ -12,8 +12,10 @@ import java.time.format.ResolverStyle;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
@@ -44,6 +46,33 @@ public final class UiStyles {
     private static final Color DANGER = new Color(0xB4, 0x23, 0x18);
 
     private UiStyles() {
+    }
+
+    /**
+     * Khi ô số mất focus mà chữ đang gõ không hợp lệ (ngoài khoảng, không phải số), giữ
+     * nguyên chữ đó thay vì lặng lẽ trả về giá trị cũ. Mặc định của Swing (COMMIT_OR_REVERT)
+     * làm gõ 7 tín chỉ rồi bấm Thêm thì lưu luôn giá trị cũ mà không báo lỗi (#10).
+     * Controller đọc ô qua FormInputs.readInt sẽ báo lỗi khoảng cho phép.
+     * Gọi sau {@link JSpinner#setEditor} nếu có đổi editor.
+     */
+    public static void keepTypedTextOnFocusLost(JSpinner... spinners) {
+        for (JSpinner spinner : spinners) {
+            if (spinner.getEditor() instanceof JSpinner.DefaultEditor editor) {
+                editor.getTextField().setFocusLostBehavior(JFormattedTextField.COMMIT);
+            }
+        }
+    }
+
+    /**
+     * Gán giá trị cho ô số và hiển thị lại đúng giá trị đó. Cần thiết vì sau
+     * {@link #keepTypedTextOnFocusLost} ô có thể còn chữ sai (vd "7") trong khi giá trị
+     * vẫn là 3; {@code setValue(3)} khi đó không đổi gì nên chữ "7" không mất.
+     */
+    public static void setSpinnerValue(JSpinner spinner, int value) {
+        spinner.setValue(value);
+        if (spinner.getEditor() instanceof JSpinner.DefaultEditor editor) {
+            editor.getTextField().setValue(spinner.getValue());
+        }
     }
 
     /** Bảng chọn một dòng, có sắp xếp, dòng xen kẽ màu. */

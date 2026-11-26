@@ -29,6 +29,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -143,6 +144,11 @@ class StudentControllerTest {
         service.add(s1);
         service.add(s2);
         controller.getTableModel().setItems(service.findAll());
+    }
+
+    @AfterEach
+    void khongHienMaBR() {
+        dialog.assertNoRuleCodes();
     }
 
     @Test
@@ -358,7 +364,8 @@ class StudentControllerTest {
 
         assertEquals(JOptionPane.INFORMATION_MESSAGE, dialog.lastMessageType);
         assertTrue(dialog.lastMessage.contains("Thôi học"));
-        assertTrue(dialog.lastMessage.contains("BR-14"));
+        assertEquals("Sinh viên đã có điểm nên không thể xóa hẳn."
+                + " Trạng thái đã được chuyển sang \"Thôi học\".", dialog.lastMessage);
         assertNotNull(dao.data.get(1));
         assertEquals(StudentStatus.DROPPED, dao.data.get(1).getStatus());
     }

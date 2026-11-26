@@ -15,6 +15,7 @@ import java.time.LocalDate;
 
 import javax.swing.JOptionPane;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +46,11 @@ class SemesterControllerTest {
         dialog = new RecordingDialogHandler();
         controller.setDialogHandler(dialog);
         controller.loadSemesters();
+    }
+
+    @AfterEach
+    void khongHienMaBR() {
+        dialog.assertNoRuleCodes();
     }
 
     private void selectRow(int row) {
@@ -82,7 +88,7 @@ class SemesterControllerTest {
 
         controller.onAdd();
 
-        assertTrue(dialog.lastMessage.contains("BR-19"));
+        assertEquals("Ngày kết thúc học kỳ phải sau ngày bắt đầu", dialog.lastMessage);
     }
 
     @Test
@@ -96,7 +102,8 @@ class SemesterControllerTest {
         controller.onAdd();
 
         assertEquals(DialogHandler.TITLE_ERROR, dialog.lastTitle);
-        assertTrue(dialog.lastMessage.contains("BR-26"));
+        assertEquals("Học kỳ 2026-1 đang mở đăng ký. Mỗi lúc chỉ có một học kỳ mở đăng ký,"
+                + " hãy đóng học kỳ đó trước", dialog.lastMessage);
         assertEquals(2, dao.byId.size());
     }
 
@@ -128,7 +135,7 @@ class SemesterControllerTest {
 
         controller.onDelete();
 
-        assertTrue(dialog.lastMessage.contains("BR-16"));
+        assertEquals("Không xóa được học kỳ 2026-1 vì đã có sinh viên đăng ký", dialog.lastMessage);
         assertEquals(2, dao.byId.size());
     }
 }

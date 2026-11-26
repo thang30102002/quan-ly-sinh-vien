@@ -51,6 +51,7 @@ public class CoursePanel extends JPanel {
     private JPanel buildForm() {
         txtCourseCode.setToolTipText("2–4 chữ in hoa + 3 chữ số, ví dụ IT101 (BR-02)");
         spnCredits.setToolTipText("Số nguyên từ 1 đến 6 (BR-18)");
+        UiStyles.keepTypedTextOnFocusLost(spnCredits);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
 
@@ -107,7 +108,7 @@ public class CoursePanel extends JPanel {
     public void clearForm() {
         txtCourseCode.setText("");
         txtName.setText("");
-        spnCredits.setValue(3);
+        UiStyles.setSpinnerValue(spnCredits, 3);
         txtDescription.setText("");
         tblCourses.clearSelection();
     }
@@ -119,7 +120,7 @@ public class CoursePanel extends JPanel {
         }
         txtCourseCode.setText(c.getCourseCode());
         txtName.setText(c.getName());
-        spnCredits.setValue(c.getCredits());
+        UiStyles.setSpinnerValue(spnCredits, c.getCredits());
         txtDescription.setText(c.getDescription() != null ? c.getDescription() : "");
     }
 

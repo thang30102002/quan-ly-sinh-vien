@@ -23,6 +23,7 @@ import java.time.LocalDate;
 
 import javax.swing.JOptionPane;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,6 +69,11 @@ class ClassSectionControllerTest {
         panel.getTblSections().setRowSelectionInterval(0, 0);
     }
 
+    @AfterEach
+    void khongHienMaBR() {
+        dialog.assertNoRuleCodes();
+    }
+
     @Test
     void reloadLookups_chonSanHocKyDangMo_vaHienBuoiCuaLop() {
         assertEquals("2026-1", panel.getSelectedSemester().getSemesterCode());
@@ -84,7 +90,8 @@ class ClassSectionControllerTest {
         controller.onAddSchedule();
 
         assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
-        assertTrue(dialog.lastMessage.contains("BR-21"));
+        assertEquals("Buổi học Thứ 2, tiết 3–5 trùng với buổi đã có của lớp: Thứ 2, tiết 1–3, phòng A101",
+                dialog.lastMessage);
         assertEquals(2, scheduleDAO.byId.size());
     }
 

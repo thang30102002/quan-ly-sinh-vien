@@ -69,9 +69,21 @@ class FormInputsTest {
         assertEquals("Ngày sinh là bắt buộc (BR-17)", ex.getMessage());
     }
 
-    /** Bug B4: 31/02/2006, 29/02/2025 từng được chấp nhận và tự đổi thành ngày cuối tháng. */
+    /**
+     * Bug B4: 31/02/2006, 29/02/2025 từng được chấp nhận và tự đổi thành ngày cuối tháng.
+     * Đúng dạng dd/MM/yyyy nhưng không có trên lịch thì báo ngày không tồn tại.
+     */
     @ParameterizedTest
-    @ValueSource(strings = {"2006-05-01", "1/5/2006", "31/02/2006", "29/02/2025", "31/04/2026"})
+    @ValueSource(strings = {"31/02/2006", "29/02/2025", "31/04/2026", "00/05/2006", "15/13/2006", " 30/02/2024 "})
+    void readDate_ngayKhongTonTai_baoKhongTonTai(String text) {
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> FormInputs.readDate(text, "Ngày sinh", "BR-17"));
+        assertEquals("Ngày bạn nhập không tồn tại. Vui lòng kiểm tra lại.",
+                DialogHandler.withoutRuleCodes(ex.getMessage()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2006-05-01", "1/5/2006", "01/05/06", "abc", "01-05-2006"})
     void readDate_saiDinhDang_baoDinhDang(String text) {
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> FormInputs.readDate(text, "Ngày sinh", "BR-17"));

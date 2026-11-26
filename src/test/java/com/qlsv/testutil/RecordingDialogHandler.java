@@ -32,6 +32,16 @@ public class RecordingDialogHandler implements DialogHandler {
     public int showConfirm(Component parent, Object message, String title, int optionType) {
         lastMessage = String.valueOf(message);
         lastTitle = title;
+        messages.add(lastMessage);
         return confirmResponse;
+    }
+
+    /** Người dùng không được thấy mã quy tắc (BR-xx) trong bất kỳ hộp thoại nào. */
+    public void assertNoRuleCodes() {
+        for (String m : messages) {
+            if (m.contains("BR-")) {
+                throw new AssertionError("Hộp thoại còn mã quy tắc: " + m);
+            }
+        }
     }
 }

@@ -91,6 +91,7 @@ public class StudentPanel extends JPanel {
 
     private JPanel buildForm() {
         spnIntakeYear.setEditor(new JSpinner.NumberEditor(spnIntakeYear, "#"));
+        UiStyles.keepTypedTextOnFocusLost(spnIntakeYear);
         txtDob.setToolTipText("Nhập theo dạng " + UiStyles.DATE_PATTERN + ", ví dụ 01/05/2006");
         txtStudentCode.setToolTipText("Ví dụ SV2026001 (BR-01)");
         txtPhone.setToolTipText("10 chữ số, bắt đầu bằng 0 (BR-17)");
@@ -216,7 +217,7 @@ public class StudentPanel extends JPanel {
         txtEmail.setText("");
         txtPhone.setText("");
         txtClassName.setText("");
-        spnIntakeYear.setValue(Year.now().getValue());
+        UiStyles.setSpinnerValue(spnIntakeYear, Year.now().getValue());
         cboStatus.setSelectedItem(StudentStatus.STUDYING);
         tblStudents.clearSelection();
     }
@@ -234,7 +235,7 @@ public class StudentPanel extends JPanel {
         txtEmail.setText(s.getEmail() != null ? s.getEmail() : "");
         txtPhone.setText(s.getPhone() != null ? s.getPhone() : "");
         txtClassName.setText(s.getClassName() != null ? s.getClassName() : "");
-        spnIntakeYear.setValue(s.getIntakeYear());
+        UiStyles.setSpinnerValue(spnIntakeYear, s.getIntakeYear());
         cboStatus.setSelectedItem(s.getStatus());
     }
 
