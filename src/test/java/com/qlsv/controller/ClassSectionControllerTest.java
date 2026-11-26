@@ -22,6 +22,7 @@ import com.qlsv.view.ClassSectionPanel;
 import java.time.LocalDate;
 
 import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,6 +94,17 @@ class ClassSectionControllerTest {
         assertEquals("Buổi học Thứ 2, tiết 3–5 trùng với buổi đã có của lớp: Thứ 2, tiết 1–3, phòng A101",
                 dialog.lastMessage);
         assertEquals(2, scheduleDAO.byId.size());
+    }
+
+    @Test
+    void onAddSection_siSo0_baoLonHon0() {
+        panel.getTxtSectionCode().setText("IT101-02");
+        ((JSpinner.DefaultEditor) panel.getSpnMaxStudents().getEditor()).getTextField().setText("0");
+
+        controller.onAddSection();
+
+        assertEquals("Sĩ số tối đa phải lớn hơn 0", dialog.lastMessage);
+        assertEquals(1, controller.getSectionModel().getRowCount());
     }
 
     @Test

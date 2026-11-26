@@ -7,6 +7,7 @@ import com.qlsv.exception.ValidationException;
 
 import java.time.LocalDate;
 
+import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
@@ -50,6 +51,38 @@ class FormInputsTest {
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> FormInputs.readInt(credits, "Số tín chỉ", null));
         assertEquals("Số tín chỉ phải là số nguyên", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "-5"})
+    void readPositiveInt_khongDuong_baoLonHon0(String typed) {
+        JSpinner maxStudents = new JSpinner(new SpinnerNumberModel(40, 1, Short.MAX_VALUE, 1));
+        ((JSpinner.DefaultEditor) maxStudents.getEditor()).getTextField().setText(typed);
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> FormInputs.readPositiveInt(maxStudents, "Sĩ số tối đa", "BR-25"));
+        assertEquals("Sĩ số tối đa phải lớn hơn 0 (BR-25)", ex.getMessage());
+    }
+
+    @Test
+    void readPositiveInt_vuotGioiHan_baoGioiHan() {
+        JSpinner maxStudents = new JSpinner(new SpinnerNumberModel(40, 1, Short.MAX_VALUE, 1));
+        ((JSpinner.DefaultEditor) maxStudents.getEditor()).getTextField().setText("40000");
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> FormInputs.readPositiveInt(maxStudents, "Sĩ số tối đa", null));
+        assertEquals("Sĩ số tối đa không được vượt quá 32767", ex.getMessage());
+    }
+
+    @Test
+    void readPositiveInt_hopLe_vaKhongPhaiSo() {
+        JSpinner maxStudents = new JSpinner(new SpinnerNumberModel(40, 1, Short.MAX_VALUE, 1));
+        JFormattedTextField field = ((JSpinner.DefaultEditor) maxStudents.getEditor()).getTextField();
+        field.setText("55");
+        assertEquals(55, FormInputs.readPositiveInt(maxStudents, "Sĩ số tối đa", null));
+
+        field.setText("abc");
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> FormInputs.readPositiveInt(maxStudents, "Sĩ số tối đa", null));
+        assertEquals("Sĩ số tối đa phải là số nguyên", ex.getMessage());
     }
 
     @Test

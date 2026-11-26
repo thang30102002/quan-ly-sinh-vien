@@ -292,7 +292,7 @@ public class ClassSectionController {
         if (course == null) {
             throw new ValidationException("Chưa chọn học phần cho lớp, hãy thêm học phần ở tab Học phần");
         }
-        int max = FormInputs.readInt(view.getSpnMaxStudents(), "Sĩ số tối đa", "BR-25");
+        int max = FormInputs.readPositiveInt(view.getSpnMaxStudents(), "Sĩ số tối đa", "BR-25");
         return new ClassSection(view.getTxtSectionCode().getText(), course, semester,
                 view.getTxtLecturer().getText(), max);
     }
