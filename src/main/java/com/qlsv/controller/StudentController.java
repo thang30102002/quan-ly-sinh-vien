@@ -121,8 +121,8 @@ public class StudentController {
             Student s = readStudentFromForm(false);
             service.update(s);
             dialogHandler.info(view, "Cập nhật sinh viên thành công!");
-            // tải lại bảng làm JTable bỏ chọn; chọn lại để sửa tiếp được (#10)
-            loadStudents(s.getId());
+            // giữ điều kiện tìm kiếm và chọn lại dòng vừa sửa để sửa tiếp được (#10)
+            loadStudents(s.getId(), true);
         } catch (ValidationException | BusinessException ex) {
             showError(ex.getMessage());
         } catch (Exception ex) {
@@ -196,18 +196,21 @@ public class StudentController {
         return selectedClass.trim();
     }
 
+    /** Tải lại toàn bộ danh sách (như trước #10): dùng khi mở app, Thêm, Xóa, Làm mới. */
     public void loadStudents() {
-        loadStudents(null);
+        loadStudents(null, false);
     }
 
     /**
-     * Tải lại danh sách ở luồng nền. Bảng vẫn theo từ khóa tìm kiếm và bộ lọc lớp đang
-     * hiển thị (trước đây sửa xong thì bảng hiện lại toàn bộ dù ô tìm kiếm còn từ khóa, #10).
+     * Tải lại danh sách ở luồng nền.
      *
-     * @param selectId id sinh viên cần chọn lại sau khi tải xong, hoặc null. Nếu sinh viên
-     *                 này không còn khớp điều kiện lọc thì xóa form để không còn dữ liệu cũ.
+     * @param selectId   id sinh viên cần chọn lại sau khi tải xong, hoặc null. Nếu sinh viên
+     *                   này không còn trong bảng thì xóa form để không còn dữ liệu cũ.
+     * @param keepSearch true: bảng vẫn theo từ khóa và bộ lọc lớp đang hiển thị (dùng sau
+     *                   khi Sửa; trước đây sửa xong bảng hiện lại toàn bộ dù ô tìm kiếm còn
+     *                   từ khóa, #10). false: hiện toàn bộ như trước.
      */
-    private void loadStudents(Integer selectId) {
+    private void loadStudents(Integer selectId, boolean keepSearch) {
         view.getBtnRefresh().setEnabled(false);
         view.setStatusText("Đang tải danh sách sinh viên...");
 
@@ -236,7 +239,7 @@ public class StudentController {
                         isUpdatingFilter = false;
                     }
                     // đọc điều kiện sau khi nạp lại bộ lọc: lớp đang lọc có thể không còn
-                    if (searchKeyword() == null && selectedClassFilter() == null) {
+                    if (!keepSearch || (searchKeyword() == null && selectedClassFilter() == null)) {
                         tableModel.setItems(students);
                         view.setStatusText("Đã tải " + students.size() + " sinh viên");
                     } else {

@@ -74,9 +74,7 @@ public class SemesterController {
             service.update(readForm(id));
             info("Cập nhật học kỳ thành công!");
             loadSemesters();
-            if (!selectSemester(id)) {
-                resetForm();
-            }
+            selectSemester(id);
         } catch (ValidationException | BusinessException ex) {
             error(ex.getMessage());
         }
@@ -140,8 +138,8 @@ public class SemesterController {
     }
 
     /** Chọn lại dòng của học kỳ có id này (tải lại bảng làm JTable bỏ chọn). */
-    private boolean selectSemester(int id) {
-        return tableModel.selectFirst(view.getTblSemesters(), s -> s.getId() == id);
+    private void selectSemester(int id) {
+        tableModel.selectFirst(view.getTblSemesters(), s -> s.getId() == id);
     }
 
     private void resetForm() {

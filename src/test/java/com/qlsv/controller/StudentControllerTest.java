@@ -356,6 +356,40 @@ class StudentControllerTest {
         assertEquals("CNTT-K26B", panel.getTxtClassName().getText());
     }
 
+    /** Giữ hành vi như trước #10: đang tìm kiếm mà Thêm thì bảng hiện toàn bộ để thấy sinh viên mới. */
+    @Test
+    void onAddStudent_dangTimKiem_bangHienToanBoNhuCu() throws Exception {
+        panel.getTxtSearch().setText("Bình");
+        controller.onSearch();
+        assertEquals(1, controller.getTableModel().getRowCount());
+        panel.getTxtStudentCode().setText("SV2026003");
+        panel.getTxtFullName().setText("Lê Văn Cường");
+        panel.getTxtDob().setText("20/10/2006");
+        panel.getTxtClassName().setText("CNTT-K26A");
+        panel.getSpnIntakeYear().setValue(2026);
+
+        controller.onAddStudent();
+        waitForLoad();
+
+        assertEquals("Thêm sinh viên thành công!", dialog.lastMessage);
+        assertEquals(3, controller.getTableModel().getRowCount());
+    }
+
+    /** Giữ hành vi như trước #10: đang tìm kiếm mà Xóa thì bảng hiện toàn bộ. */
+    @Test
+    void onDeleteStudent_dangTimKiem_bangHienToanBoNhuCu() throws Exception {
+        panel.getTxtSearch().setText("Bình");
+        controller.onSearch();
+        panel.getTblStudents().setRowSelectionInterval(0, 0);
+
+        controller.onDeleteStudent();
+        waitForLoad();
+
+        assertEquals("Đã xóa sinh viên thành công!", dialog.lastMessage);
+        assertEquals(1, controller.getTableModel().getRowCount());
+        assertEquals("SV2026001", controller.getTableModel().getItemAt(0).getStudentCode());
+    }
+
     /** Chờ SwingWorker của loadStudents tải xong (nút Làm mới bật lại trong done()). */
     private void waitForLoad() throws Exception {
         long deadline = System.currentTimeMillis() + 5000;
