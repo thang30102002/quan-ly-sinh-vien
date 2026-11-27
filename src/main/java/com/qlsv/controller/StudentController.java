@@ -73,6 +73,11 @@ public class StudentController {
     }
 
     private Student readStudentFromForm(boolean isNew) {
+        // mã SV, họ tên, ngày sinh, lớp sinh hoạt, khóa có dấu * trên form
+        // (giới tính, trạng thái là danh sách chọn, luôn có giá trị)
+        FormInputs.requireFilled(view.getTxtStudentCode().getText(), view.getTxtFullName().getText(),
+                view.getTxtDob().getText(), view.getTxtClassName().getText(),
+                FormInputs.text(view.getSpnIntakeYear()));
         String code = view.getTxtStudentCode().getText();
         String fullName = view.getTxtFullName().getText();
         LocalDate dob = FormInputs.readDate(view.getTxtDob().getText(), "Ngày sinh", "BR-17");

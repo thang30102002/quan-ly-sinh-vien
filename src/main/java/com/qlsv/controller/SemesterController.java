@@ -125,6 +125,9 @@ public class SemesterController {
     }
 
     private Semester readForm(Integer id) {
+        // mã, tên, ngày bắt đầu, ngày kết thúc có dấu * trên form
+        FormInputs.requireFilled(view.getTxtSemesterCode().getText(), view.getTxtName().getText(),
+                view.getTxtStartDate().getText(), view.getTxtEndDate().getText());
         LocalDate start = FormInputs.readDate(view.getTxtStartDate().getText(), "Ngày bắt đầu", "BR-19");
         LocalDate end = FormInputs.readDate(view.getTxtEndDate().getText(), "Ngày kết thúc", "BR-19");
         Semester s = new Semester(view.getTxtSemesterCode().getText(), view.getTxtName().getText(),

@@ -292,12 +292,16 @@ public class ClassSectionController {
         if (course == null) {
             throw new ValidationException("Chưa chọn học phần cho lớp, hãy thêm học phần ở tab Học phần");
         }
+        // mã lớp, sĩ số tối đa có dấu * trên form
+        FormInputs.requireFilled(view.getTxtSectionCode().getText(), FormInputs.text(view.getSpnMaxStudents()));
         int max = FormInputs.readPositiveInt(view.getSpnMaxStudents(), "Sĩ số tối đa", "BR-25");
         return new ClassSection(view.getTxtSectionCode().getText(), course, semester,
                 view.getTxtLecturer().getText(), max);
     }
 
     private Schedule readScheduleForm(Integer id) {
+        // tiết bắt đầu, tiết kết thúc có dấu * trên form (thứ là danh sách chọn)
+        FormInputs.requireFilled(FormInputs.text(view.getSpnStartPeriod()), FormInputs.text(view.getSpnEndPeriod()));
         int start = FormInputs.readInt(view.getSpnStartPeriod(), "Tiết bắt đầu", "BR-21");
         int end = FormInputs.readInt(view.getSpnEndPeriod(), "Tiết kết thúc", "BR-21");
         Schedule s = new Schedule(selectedSection, view.getSelectedDayOfWeek(), start, end,

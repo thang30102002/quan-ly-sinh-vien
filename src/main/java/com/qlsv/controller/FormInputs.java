@@ -19,7 +19,30 @@ import javax.swing.SpinnerNumberModel;
  */
 final class FormInputs {
 
+    /** Thông báo khi còn ô bắt buộc (nhãn có dấu *) để trống. */
+    static final String REQUIRED_FIELDS_MISSING =
+            "Vui lòng điền đầy đủ các thông tin bắt buộc * trước khi tiếp tục";
+
     private FormInputs() {
+    }
+
+    /**
+     * Báo {@link #REQUIRED_FIELDS_MISSING} nếu có ô bắt buộc để trống (chỉ có dấu cách
+     * cũng tính là trống). Gọi trước khi đọc, kiểm tra định dạng từng ô.
+     *
+     * @param texts chữ trong các ô bắt buộc; ô số thì truyền {@link #text(JSpinner)}
+     */
+    static void requireFilled(String... texts) {
+        for (String t : texts) {
+            if (t == null || t.isBlank()) {
+                throw new ValidationException(REQUIRED_FIELDS_MISSING);
+            }
+        }
+    }
+
+    /** @return chữ đang có trong ô số (kể cả chưa nhấn Enter) */
+    static String text(JSpinner spinner) {
+        return typedText(spinner);
     }
 
     /** Chữ người dùng gõ phải là số nguyên viết liền, không dấu chấm, dấu phẩy. */

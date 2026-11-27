@@ -22,6 +22,7 @@ import com.qlsv.view.ClassSectionPanel;
 import java.time.LocalDate;
 
 import javax.swing.JOptionPane;
+import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 
 import org.junit.jupiter.api.AfterEach;
@@ -117,6 +118,59 @@ class ClassSectionControllerTest {
 
         assertEquals("Thêm buổi học thành công!", dialog.lastMessage);
         assertEquals(3, controller.getScheduleModel().getRowCount());
+    }
+
+    private static final String REQUIRED = "Vui lòng điền đầy đủ các thông tin bắt buộc * trước khi tiếp tục";
+
+    private static JFormattedTextField field(JSpinner spinner) {
+        return ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField();
+    }
+
+    /** Lớp học phần: để trống mã lớp hoặc sĩ số. */
+    @Test
+    void onAddSection_thieuThongTinBatBuoc_baoDienDayDu() {
+        String[][] cases = {{"", "40"}, {"   ", "40"}, {"IT101-02", ""}, {"", ""}};
+        for (String[] c : cases) {
+            panel.getTxtSectionCode().setText(c[0]);
+            field(panel.getSpnMaxStudents()).setText(c[1]);
+
+            controller.onAddSection();
+
+            assertEquals(REQUIRED, dialog.lastMessage, String.join("|", c));
+            assertEquals(1, controller.getSectionModel().getRowCount());
+        }
+    }
+
+    @Test
+    void onUpdateSection_xoaTrangMaLop_baoDienDayDu() {
+        panel.getTxtSectionCode().setText("");
+
+        controller.onUpdateSection();
+
+        assertEquals(REQUIRED, dialog.lastMessage);
+        assertEquals("IT101-01", controller.getSectionModel().getItemAt(0).getSectionCode());
+    }
+
+    /** Buổi học: để trống tiết bắt đầu hoặc tiết kết thúc, khi Thêm và khi Sửa. */
+    @Test
+    void buoiHoc_thieuTiet_baoDienDayDu() {
+        String[][] cases = {{"", "3"}, {"6", ""}, {" ", " "}};
+        for (String[] c : cases) {
+            panel.getCboDay().setSelectedIndex(4);
+            field(panel.getSpnStartPeriod()).setText(c[0]);
+            field(panel.getSpnEndPeriod()).setText(c[1]);
+
+            controller.onAddSchedule();
+
+            assertEquals(REQUIRED, dialog.lastMessage, String.join("|", c));
+            assertEquals(2, scheduleDAO.byId.size());
+        }
+
+        panel.getTblSchedules().setRowSelectionInterval(1, 1);
+        field(panel.getSpnStartPeriod()).setText("");
+        controller.onUpdateSchedule();
+        assertEquals(REQUIRED, dialog.lastMessage);
+        assertEquals(1, scheduleDAO.byId.get(wednesday.getId()).getStartPeriod());
     }
 
     /** Bug B2: sửa buổi học xong bảng tải lại làm mất dòng đang chọn, sửa lần hai bị báo "chưa chọn". */

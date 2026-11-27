@@ -141,6 +141,9 @@ public class CourseController {
     }
 
     private Course readForm(Integer id) {
+        // Mã, tên, số tín chỉ có dấu * trên form
+        FormInputs.requireFilled(view.getTxtCourseCode().getText(), view.getTxtName().getText(),
+                FormInputs.text(view.getSpnCredits()));
         int credits = FormInputs.readInt(view.getSpnCredits(), "Số tín chỉ", "BR-18");
         Course c = new Course(view.getTxtCourseCode().getText(), view.getTxtName().getText(),
                 credits, view.getTxtDescription().getText());

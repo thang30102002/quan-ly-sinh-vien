@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
+import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 
@@ -388,6 +389,62 @@ class StudentControllerTest {
         assertEquals("Đã xóa sinh viên thành công!", dialog.lastMessage);
         assertEquals(1, controller.getTableModel().getRowCount());
         assertEquals("SV2026001", controller.getTableModel().getItemAt(0).getStudentCode());
+    }
+
+    private static final String REQUIRED = "Vui lòng điền đầy đủ các thông tin bắt buộc * trước khi tiếp tục";
+
+    /** Để trống (hoặc chỉ dấu cách) bất kỳ ô bắt buộc nào: mã SV, họ tên, ngày sinh, lớp, khóa. */
+    @Test
+    void onAddStudent_thieuThongTinBatBuoc_baoDienDayDu() {
+        JFormattedTextField year = ((JSpinner.DefaultEditor) panel.getSpnIntakeYear().getEditor()).getTextField();
+        String[][] cases = {
+            {"", "", "", "", "2026"},                                   // chỉ có khóa mặc định
+            {"", "Lê Văn Cường", "20/10/2006", "CNTT-K26A", "2026"},    // thiếu mã SV
+            {"SV2026003", "  ", "20/10/2006", "CNTT-K26A", "2026"},     // họ tên chỉ dấu cách
+            {"SV2026003", "Lê Văn Cường", "", "CNTT-K26A", "2026"},     // thiếu ngày sinh
+            {"SV2026003", "Lê Văn Cường", "20/10/2006", "", "2026"},    // thiếu lớp
+            {"SV2026003", "Lê Văn Cường", "20/10/2006", "CNTT-K26A", ""}, // xóa trắng khóa
+        };
+        for (String[] c : cases) {
+            panel.getTxtStudentCode().setText(c[0]);
+            panel.getTxtFullName().setText(c[1]);
+            panel.getTxtDob().setText(c[2]);
+            panel.getTxtClassName().setText(c[3]);
+            year.setText(c[4]);
+
+            controller.onAddStudent();
+
+            assertEquals(REQUIRED, dialog.lastMessage, String.join("|", c));
+            assertNull(dao.data.get(3));
+        }
+    }
+
+    /** Email, số điện thoại không bắt buộc: bỏ trống vẫn thêm được. */
+    @Test
+    void onAddStudent_boTrongEmailVaSdt_vanThemDuoc() {
+        panel.getTxtStudentCode().setText("SV2026003");
+        panel.getTxtFullName().setText("Lê Văn Cường");
+        panel.getTxtDob().setText("20/10/2006");
+        panel.getTxtClassName().setText("CNTT-K26A");
+        panel.getSpnIntakeYear().setValue(2026);
+        panel.getTxtEmail().setText("");
+        panel.getTxtPhone().setText("");
+
+        controller.onAddStudent();
+
+        assertEquals("Thêm sinh viên thành công!", dialog.lastMessage);
+    }
+
+    @Test
+    void onUpdateStudent_xoaTrangHoTen_baoDienDayDu() {
+        panel.getTblStudents().setRowSelectionInterval(0, 0);
+        controller.onRowSelected();
+        panel.getTxtFullName().setText("");
+
+        controller.onUpdateStudent();
+
+        assertEquals(REQUIRED, dialog.lastMessage);
+        assertEquals("Nguyễn Văn An", dao.data.get(1).getFullName());
     }
 
     /** Chờ SwingWorker của loadStudents tải xong (nút Làm mới bật lại trong done()). */

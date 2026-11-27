@@ -107,6 +107,54 @@ class SemesterControllerTest {
         assertEquals(2, dao.byId.size());
     }
 
+    private static final String REQUIRED = "Vui lòng điền đầy đủ các thông tin bắt buộc * trước khi tiếp tục";
+
+    /** Để trống (hoặc chỉ dấu cách) bất kỳ ô bắt buộc nào: mã, tên, ngày bắt đầu, ngày kết thúc. */
+    @Test
+    void onAdd_thieuThongTinBatBuoc_baoDienDayDu() {
+        String[][] cases = {
+            {"", "", "", ""},                                      // bỏ trống hết
+            {"", "HK1 2027-2028", "07/09/2027", "15/01/2028"},     // thiếu mã
+            {"2027-1", " ", "07/09/2027", "15/01/2028"},           // tên chỉ dấu cách
+            {"2027-1", "HK1 2027-2028", "", "15/01/2028"},         // thiếu ngày bắt đầu
+            {"2027-1", "HK1 2027-2028", "07/09/2027", "  "},       // thiếu ngày kết thúc
+        };
+        for (String[] c : cases) {
+            panel.getTxtSemesterCode().setText(c[0]);
+            panel.getTxtName().setText(c[1]);
+            panel.getTxtStartDate().setText(c[2]);
+            panel.getTxtEndDate().setText(c[3]);
+
+            controller.onAdd();
+
+            assertEquals(REQUIRED, dialog.lastMessage, String.join("|", c));
+            assertEquals(2, dao.byId.size());
+        }
+    }
+
+    @Test
+    void onUpdate_xoaTrangOBatBuoc_baoDienDayDu() {
+        selectRow(1);
+        panel.getTxtEndDate().setText("");
+
+        controller.onUpdate();
+
+        assertEquals(REQUIRED, dialog.lastMessage);
+        assertEquals(LocalDate.of(2027, 1, 15), dao.byId.get(hk1.getId()).getEndDate());
+    }
+
+    @Test
+    void onAdd_dienDuNhungSaiDinhDang_vanBaoLoiCuThe() {
+        panel.getTxtSemesterCode().setText("2027-1");
+        panel.getTxtName().setText("HK1 2027-2028");
+        panel.getTxtStartDate().setText("31/02/2027");
+        panel.getTxtEndDate().setText("15/01/2028");
+
+        controller.onAdd();
+
+        assertEquals("Ngày bạn nhập không tồn tại. Vui lòng kiểm tra lại.", dialog.lastMessage);
+    }
+
     /** Bug B2: sửa xong bảng tải lại làm mất dòng đang chọn, bấm Sửa lần hai bị báo "chưa chọn". */
     @Test
     void onUpdate_thanhCong_vanChonDongVuaSua_suaTiepDuoc() {

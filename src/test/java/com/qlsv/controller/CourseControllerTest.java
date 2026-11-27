@@ -164,6 +164,61 @@ class CourseControllerTest {
         assertEquals("", panel.getTxtName().getText());
     }
 
+    private static final String REQUIRED = "Vui lòng điền đầy đủ các thông tin bắt buộc * trước khi tiếp tục";
+
+    /** Chỉ nhập số tín chỉ, bỏ trống mã và tên, hoặc để trống một ô bắt buộc bất kỳ. */
+    @Test
+    void onAdd_thieuThongTinBatBuoc_baoDienDayDu() {
+        JFormattedTextField credits = ((JSpinner.DefaultEditor) panel.getSpnCredits().getEditor()).getTextField();
+        String[][] cases = {
+            {"", "", "4"},                 // chỉ nhập số tín chỉ
+            {"", "Cơ sở dữ liệu", "4"},    // thiếu mã
+            {"IT201", "", "4"},            // thiếu tên
+            {"IT201", "   ", "4"},         // tên chỉ có dấu cách
+            {"IT201", "Cơ sở dữ liệu", ""},// xóa trắng ô tín chỉ
+            {"  ", "Cơ sở dữ liệu", " "},
+        };
+        for (String[] c : cases) {
+            panel.getTxtCourseCode().setText(c[0]);
+            panel.getTxtName().setText(c[1]);
+            credits.setText(c[2]);
+
+            controller.onAdd();
+
+            assertEquals(REQUIRED, dialog.lastMessage, String.join("|", c));
+            assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
+            assertEquals(2, dao.byId.size());
+        }
+    }
+
+    /** Điền đủ thì vẫn báo lỗi cụ thể như trước khi sai định dạng. */
+    @Test
+    void onAdd_dienDuNhungSaiDinhDang_vanBaoLoiCuThe() {
+        JFormattedTextField credits = ((JSpinner.DefaultEditor) panel.getSpnCredits().getEditor()).getTextField();
+        panel.getTxtCourseCode().setText("IT201");
+        panel.getTxtName().setText("Cơ sở dữ liệu");
+        credits.setText("abc");
+        controller.onAdd();
+        assertEquals("Số tín chỉ không hợp lệ", dialog.lastMessage);
+
+        panel.getTxtCourseCode().setText("it2001");
+        credits.setText("3");
+        controller.onAdd();
+        assertTrue(dialog.lastMessage.startsWith("Mã học phần không hợp lệ"), dialog.lastMessage);
+        assertEquals(2, dao.byId.size());
+    }
+
+    @Test
+    void onUpdate_xoaTrangOBatBuoc_baoDienDayDu() {
+        selectRow(1);
+        panel.getTxtName().setText("");
+
+        controller.onUpdate();
+
+        assertEquals(REQUIRED, dialog.lastMessage);
+        assertEquals("Cấu trúc dữ liệu", dao.byId.get(it102.getId()).getName());
+    }
+
     @Test
     void onUpdate_chuaChon_canhBao() {
         controller.onUpdate();
