@@ -37,6 +37,9 @@ import javax.swing.table.TableColumnModel;
 
 public class StudentPanel extends JPanel {
 
+    /** Mục đầu của bộ lọc lớp, nghĩa là không lọc theo lớp. */
+    public static final String ALL_CLASSES = "Tất cả các lớp";
+
     private static final int FIELD_COLUMNS = 12;
 
     private static final Color ROW_EVEN = Color.WHITE;
@@ -82,7 +85,7 @@ public class StudentPanel extends JPanel {
         super(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        cboClassFilter.addItem("Tất cả các lớp");
+        cboClassFilter.addItem(ALL_CLASSES);
 
         add(buildForm(), BorderLayout.WEST);
         add(buildTable(), BorderLayout.CENTER);
@@ -241,7 +244,7 @@ public class StudentPanel extends JPanel {
     public void updateClassFilter(List<String> classes) {
         String currentSelection = (String) cboClassFilter.getSelectedItem();
         cboClassFilter.removeAllItems();
-        cboClassFilter.addItem("Tất cả các lớp");
+        cboClassFilter.addItem(ALL_CLASSES);
         if (classes != null) {
             for (String c : classes) {
                 if (c != null && !c.isBlank()) {

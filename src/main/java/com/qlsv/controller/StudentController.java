@@ -172,16 +172,8 @@ public class StudentController {
     }
 
     public void onSearch() {
-        String keyword = view.getTxtSearch().getText().trim();
-        String selectedClass = (String) view.getCboClassFilter().getSelectedItem();
-        if ("Tất cả các lớp".equals(selectedClass)) {
-            selectedClass = null;
-        }
-        String kw = keyword.isEmpty() ? null : keyword;
-        String cls = (selectedClass == null || selectedClass.isBlank()) ? null : selectedClass.trim();
-
         try {
-            List<Student> results = service.search(kw, cls);
+            List<Student> results = service.search(searchKeyword(), selectedClassFilter());
             tableModel.setItems(results);
             view.setStatusText("Tìm thấy " + results.size() + " sinh viên");
         } catch (Exception ex) {
@@ -189,14 +181,31 @@ public class StudentController {
         }
     }
 
+    /** @return từ khóa đang nhập, hoặc null nếu để trống */
+    private String searchKeyword() {
+        String keyword = view.getTxtSearch().getText().trim();
+        return keyword.isEmpty() ? null : keyword;
+    }
+
+    /** @return lớp đang chọn ở bộ lọc, hoặc null nếu chọn "Tất cả các lớp" */
+    private String selectedClassFilter() {
+        String selectedClass = (String) view.getCboClassFilter().getSelectedItem();
+        if (selectedClass == null || selectedClass.isBlank() || StudentPanel.ALL_CLASSES.equals(selectedClass)) {
+            return null;
+        }
+        return selectedClass.trim();
+    }
+
     public void loadStudents() {
         loadStudents(null);
     }
 
     /**
-     * Tải lại danh sách ở luồng nền.
+     * Tải lại danh sách ở luồng nền. Bảng vẫn theo từ khóa tìm kiếm và bộ lọc lớp đang
+     * hiển thị (trước đây sửa xong thì bảng hiện lại toàn bộ dù ô tìm kiếm còn từ khóa, #10).
      *
-     * @param selectId id sinh viên cần chọn lại sau khi tải xong, hoặc null
+     * @param selectId id sinh viên cần chọn lại sau khi tải xong, hoặc null. Nếu sinh viên
+     *                 này không còn khớp điều kiện lọc thì xóa form để không còn dữ liệu cũ.
      */
     private void loadStudents(Integer selectId) {
         view.getBtnRefresh().setEnabled(false);
@@ -212,7 +221,6 @@ public class StudentController {
             protected void done() {
                 try {
                     List<Student> students = get();
-                    tableModel.setItems(students);
                     List<String> classes = students.stream()
                             .map(Student::getClassName)
                             .filter(Objects::nonNull)
@@ -222,11 +230,22 @@ public class StudentController {
                             .sorted()
                             .toList();
                     isUpdatingFilter = true;
-                    view.updateClassFilter(classes);
-                    isUpdatingFilter = false;
-                    view.setStatusText("Đã tải " + students.size() + " sinh viên");
-                    if (selectId != null) {
-                        tableModel.selectFirst(view.getTblStudents(), s -> s.getId().equals(selectId));
+                    try {
+                        view.updateClassFilter(classes);
+                    } finally {
+                        isUpdatingFilter = false;
+                    }
+                    // đọc điều kiện sau khi nạp lại bộ lọc: lớp đang lọc có thể không còn
+                    if (searchKeyword() == null && selectedClassFilter() == null) {
+                        tableModel.setItems(students);
+                        view.setStatusText("Đã tải " + students.size() + " sinh viên");
+                    } else {
+                        onSearch();
+                    }
+                    if (selectId != null
+                            && !tableModel.selectFirst(view.getTblStudents(), s -> s.getId().equals(selectId))) {
+                        view.clearForm();
+                        selectedStudentId = null;
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

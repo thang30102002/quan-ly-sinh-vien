@@ -79,24 +79,43 @@ final class FormInputs {
     /** Thông báo khi ngày đúng dạng dd/MM/yyyy nhưng không có trên lịch, vd 31/02/2006. */
     static final String DATE_NOT_EXIST = "Ngày bạn nhập không tồn tại. Vui lòng kiểm tra lại.";
 
+    /** Năm hợp lý cho mọi ô ngày của ứng dụng (ngày sinh, ngày học kỳ). */
+    static final int MIN_YEAR = 1900;
+    static final int MAX_YEAR = 2100;
+
+    /** Đúng dạng dd/MM/yyyy: 2 chữ số ngày, 2 chữ số tháng, 4 chữ số năm. */
+    private static final Pattern DATE_TEXT = Pattern.compile("\\d{2}/\\d{2}/\\d{4}");
+
     /**
-     * Đọc ngày dạng dd/MM/yyyy; để trống thì báo bắt buộc. Đúng dạng nhưng không có trên
-     * lịch (31/02, 29/02 năm không nhuận, tháng 13) thì báo {@link #DATE_NOT_EXIST}.
+     * Đọc ngày dạng dd/MM/yyyy.
+     * <ul>
+     * <li>Để trống: báo bắt buộc.</li>
+     * <li>Sai dạng (vd 2006-05-01, 1/5/2006, năm 5 chữ số): báo định dạng.</li>
+     * <li>Đúng dạng nhưng không có trên lịch (31/02, 29/02 năm không nhuận, tháng 13):
+     *     báo {@link #DATE_NOT_EXIST}.</li>
+     * <li>Năm ngoài {@value #MIN_YEAR}–{@value #MAX_YEAR} (vd 01/01/0000): báo khoảng năm.</li>
+     * </ul>
      */
     static LocalDate readDate(String text, String fieldName, String rule) {
         String value = text == null ? "" : text.trim();
         if (value.isEmpty()) {
             throw new ValidationException(fieldName + " là bắt buộc" + ruleSuffix(rule));
         }
-        try {
-            return LocalDate.parse(value, UiStyles.DATE_FORMAT);
-        } catch (DateTimeParseException e) {
-            if (value.matches("\\d{2}/\\d{2}/\\d{4}")) {
-                throw new ValidationException(DATE_NOT_EXIST + ruleSuffix(rule));
-            }
+        if (!DATE_TEXT.matcher(value).matches()) {
             throw new ValidationException(fieldName + " không đúng định dạng " + UiStyles.DATE_PATTERN
                     + ", ví dụ 07/09/2026" + ruleSuffix(rule));
         }
+        LocalDate date;
+        try {
+            date = LocalDate.parse(value, UiStyles.DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new ValidationException(DATE_NOT_EXIST + ruleSuffix(rule));
+        }
+        if (date.getYear() < MIN_YEAR || date.getYear() > MAX_YEAR) {
+            throw new ValidationException(fieldName + " phải có năm từ " + MIN_YEAR + " đến " + MAX_YEAR
+                    + ruleSuffix(rule));
+        }
+        return date;
     }
 
     /** Số nguyên người dùng gõ nằm ngoài khoảng của spinner: nêu khoảng cho phép. */

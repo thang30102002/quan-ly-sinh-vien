@@ -135,6 +135,36 @@ class CourseControllerTest {
     }
 
     @Test
+    void onUpdate_dangTimKiem_vanGiuKetQuaTimKiem() {
+        panel.getTxtSearch().setText("IT102");
+        controller.onSearch();
+        selectRow(0);
+        panel.getSpnCredits().setValue(4);
+
+        controller.onUpdate();
+
+        assertEquals(1, controller.getTableModel().getRowCount());
+        assertEquals(it102.getId(), controller.getSelectedId());
+    }
+
+    /** Sửa tên khiến học phần không còn khớp từ khóa: bảng vẫn lọc, form xóa trắng. */
+    @Test
+    void onUpdate_khongConKhopTimKiem_xoaForm() {
+        panel.getTxtSearch().setText("Cấu trúc");
+        controller.onSearch();
+        selectRow(0);
+        panel.getTxtName().setText("Giải thuật");
+
+        controller.onUpdate();
+
+        assertEquals("Cập nhật học phần thành công!", dialog.lastMessage);
+        assertEquals("Giải thuật", dao.byId.get(it102.getId()).getName());
+        assertEquals(0, controller.getTableModel().getRowCount());
+        assertNull(controller.getSelectedId());
+        assertEquals("", panel.getTxtName().getText());
+    }
+
+    @Test
     void onUpdate_chuaChon_canhBao() {
         controller.onUpdate();
 

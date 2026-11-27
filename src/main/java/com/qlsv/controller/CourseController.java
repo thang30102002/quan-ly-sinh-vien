@@ -75,7 +75,10 @@ public class CourseController {
             service.update(readForm(id));
             info("Cập nhật học phần thành công!");
             loadCourses();
-            selectCourse(id);
+            if (!selectCourse(id)) {
+                // đã lưu nhưng không còn khớp từ khóa tìm kiếm: bỏ dữ liệu cũ trên form
+                resetForm();
+            }
         } catch (ValidationException | BusinessException ex) {
             error(ex.getMessage());
         }
@@ -149,9 +152,13 @@ public class CourseController {
         return tableModel.getSelectedItem(view.getTblCourses());
     }
 
-    /** Chọn lại dòng của học phần có id này (tải lại bảng làm JTable bỏ chọn). */
-    private void selectCourse(int id) {
-        tableModel.selectFirst(view.getTblCourses(), c -> c.getId() == id);
+    /**
+     * Chọn lại dòng của học phần có id này (tải lại bảng làm JTable bỏ chọn).
+     *
+     * @return false nếu học phần không còn trong bảng (vd không khớp từ khóa tìm kiếm)
+     */
+    private boolean selectCourse(int id) {
+        return tableModel.selectFirst(view.getTblCourses(), c -> c.getId() == id);
     }
 
     private void resetForm() {

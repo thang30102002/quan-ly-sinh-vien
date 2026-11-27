@@ -142,6 +142,21 @@ class FormInputsTest {
         assertEquals(LocalDate.of(2024, 2, 29), FormInputs.readDate("29/02/2024", "Ngày sinh", "BR-17"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"01/01/1900", "31/12/2100", "29/02/2000"})
+    void readDate_namOBien_hopLe(String text) {
+        assertEquals(LocalDate.parse(text, UiStyles.DATE_FORMAT), FormInputs.readDate(text, "Ngày sinh", "BR-17"));
+    }
+
+    /** Năm vô lý như 0000, 0001 từng được nhận (#10). */
+    @ParameterizedTest
+    @ValueSource(strings = {"01/01/0000", "01/01/0001", "31/12/1899", "01/01/2101", "01/01/9999"})
+    void readDate_namNgoaiKhoang_baoKhoangNam(String text) {
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> FormInputs.readDate(text, "Ngày bắt đầu", "BR-19"));
+        assertEquals("Ngày bắt đầu phải có năm từ 1900 đến 2100 (BR-19)", ex.getMessage());
+    }
+
     @Test
     void readDate_trong_baoBatBuoc() {
         ValidationException ex = assertThrows(ValidationException.class,
@@ -163,7 +178,8 @@ class FormInputsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"2006-05-01", "1/5/2006", "01/05/06", "abc", "01-05-2006"})
+    @ValueSource(strings = {"2006-05-01", "1/5/2006", "01/05/06", "abc", "01-05-2006", "01/01/+12345",
+        "01/01/12345", "01/01/-2006", "\uff10\uff11/\uff10\uff15/\uff12\uff10\uff10\uff16", "01/05/2006x", "01 /05/2006"})
     void readDate_saiDinhDang_baoDinhDang(String text) {
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> FormInputs.readDate(text, "Ngày sinh", "BR-17"));

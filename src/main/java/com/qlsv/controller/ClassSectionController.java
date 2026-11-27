@@ -247,7 +247,10 @@ public class ClassSectionController {
             info("Cập nhật buổi học thành công!");
             loadSchedules();
             // tải lại bảng làm JTable bỏ chọn; chọn lại để sửa tiếp được (#10)
-            scheduleModel.selectFirst(view.getTblSchedules(), s -> s.getId() == id);
+            if (!scheduleModel.selectFirst(view.getTblSchedules(), s -> s.getId() == id)) {
+                selectedScheduleId = null;
+                view.clearScheduleForm();
+            }
         } catch (ValidationException | BusinessException ex) {
             error(ex.getMessage());
         }
