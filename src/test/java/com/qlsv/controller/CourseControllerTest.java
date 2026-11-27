@@ -11,6 +11,7 @@ import com.qlsv.testutil.FakeCourseDAO;
 import com.qlsv.testutil.RecordingDialogHandler;
 import com.qlsv.view.CoursePanel;
 
+import javax.swing.JFormattedTextField;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 
@@ -78,9 +79,9 @@ class CourseControllerTest {
     }
 
     /**
-     * Bug B3: gõ 7 vào ô tín chỉ (khoảng 1–6) bị báo "phải là số nguyên" thay vì báo khoảng
+     * Bug B3: gõ 7 vào ô tín chỉ (khoảng 1–6) bị báo "không phải số nguyên" thay vì báo khoảng
      * cho phép theo BR-18. Chữ "7" còn trong ô vì ô giữ chữ khi mất focus
-     * (UiStyles.keepTypedTextOnFocusLost).
+     * (UiStyles.setupNumberSpinner).
      */
     @Test
     void onAdd_goTinChiNgoaiKhoang_baoDungKhoangBR18() {
@@ -114,6 +115,23 @@ class CourseControllerTest {
 
         assertEquals("Cập nhật học phần thành công!", dialog.lastMessage);
         assertEquals(4, dao.byId.get(it102.getId()).getCredits());
+    }
+
+    /** Gõ số lẻ (dấu chấm hay dấu phẩy, bất kể ngôn ngữ máy) không được lưu thành số nguyên. */
+    @Test
+    void onAdd_goTinChiSoLe_baoKhongHopLe() {
+        panel.getTxtCourseCode().setText("IT201");
+        panel.getTxtName().setText("Cơ sở dữ liệu");
+        JFormattedTextField credits = ((JSpinner.DefaultEditor) panel.getSpnCredits().getEditor()).getTextField();
+
+        for (String typed : new String[] {"3,5", "3.5"}) {
+            credits.setText(typed);
+            controller.onAdd();
+
+            assertEquals("Số tín chỉ không hợp lệ", dialog.lastMessage);
+            assertEquals(JOptionPane.ERROR_MESSAGE, dialog.lastMessageType);
+            assertEquals(2, dao.byId.size());
+        }
     }
 
     @Test

@@ -90,8 +90,7 @@ public class StudentPanel extends JPanel {
     }
 
     private JPanel buildForm() {
-        spnIntakeYear.setEditor(new JSpinner.NumberEditor(spnIntakeYear, "#"));
-        UiStyles.keepTypedTextOnFocusLost(spnIntakeYear);
+        UiStyles.setupNumberSpinner(spnIntakeYear);
         txtDob.setToolTipText("Nhập theo dạng " + UiStyles.DATE_PATTERN + ", ví dụ 01/05/2006");
         txtStudentCode.setToolTipText("Ví dụ SV2026001 (BR-01)");
         txtPhone.setToolTipText("10 chữ số, bắt đầu bằng 0 (BR-17)");

@@ -3,9 +3,11 @@ package com.qlsv.controller;
 import com.qlsv.exception.ValidationException;
 import com.qlsv.view.UiStyles;
 
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.regex.Pattern;
 
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -20,21 +22,37 @@ final class FormInputs {
     private FormInputs() {
     }
 
+    /** Chữ người dùng gõ phải là số nguyên viết liền, không dấu chấm, dấu phẩy. */
+    private static final Pattern INTEGER_TEXT = Pattern.compile("-?\\d+");
+
     /**
      * Lấy số nguyên từ JSpinner, chốt cả giá trị người dùng vừa gõ mà chưa nhấn Enter.
-     * Gõ số nằm ngoài khoảng của spinner thì báo đúng khoảng cho phép, không báo
-     * "phải là số nguyên".
+     * <ul>
+     * <li>Không phải số nguyên ("3.5", "3,5", "abc", để trống): báo "… không hợp lệ".
+     *     Kiểm tra chữ trước khi để Swing đọc vì Swing đọc theo ngôn ngữ máy: máy tiếng Anh
+     *     đọc "3.5", máy tiếng Việt đọc "3,5" thành 3 rồi lặng lẽ bỏ phần lẻ (#10).</li>
+     * <li>Số nguyên ngoài khoảng của spinner: báo đúng khoảng cho phép.</li>
+     * </ul>
      */
     static int readInt(JSpinner spinner, String fieldName, String rule) {
+        String typed = typedText(spinner);
+        if (!INTEGER_TEXT.matcher(typed).matches()) {
+            throw new ValidationException(fieldName + " không hợp lệ" + ruleSuffix(rule));
+        }
+        // Swing không đọc được " 5 " (dấu cách thừa) nên ghi lại chữ đã bỏ khoảng trắng
+        if (spinner.getEditor() instanceof JSpinner.DefaultEditor editor
+                && !editor.getTextField().getText().equals(typed)) {
+            editor.getTextField().setText(typed);
+        }
         try {
             spinner.commitEdit();
         } catch (ParseException e) {
-            throw new ValidationException(invalidIntMessage(spinner, fieldName) + ruleSuffix(rule));
+            throw new ValidationException(outOfRangeMessage(spinner, fieldName) + ruleSuffix(rule));
         }
         if (spinner.getValue() instanceof Number n) {
             return n.intValue();
         }
-        throw new ValidationException(fieldName + " phải là số nguyên" + ruleSuffix(rule));
+        throw new ValidationException(fieldName + " không hợp lệ" + ruleSuffix(rule));
     }
 
     /**
@@ -46,9 +64,9 @@ final class FormInputs {
         try {
             return readInt(spinner, fieldName, rule);
         } catch (ValidationException e) {
-            Long typed = typedNumber(spinner);
-            if (typed != null && spinner.getModel() instanceof SpinnerNumberModel m) {
-                if (typed < 1) {
+            String typed = typedText(spinner);
+            if (INTEGER_TEXT.matcher(typed).matches() && spinner.getModel() instanceof SpinnerNumberModel m) {
+                if (new BigInteger(typed).signum() <= 0) {
                     throw new ValidationException(fieldName + " phải lớn hơn 0" + ruleSuffix(rule));
                 }
                 throw new ValidationException(fieldName + " không được vượt quá " + m.getMaximum()
@@ -81,19 +99,18 @@ final class FormInputs {
         }
     }
 
-    /** Chữ người dùng gõ là số nguyên nhưng ngoài khoảng thì nêu khoảng, còn lại báo không phải số. */
-    private static String invalidIntMessage(JSpinner spinner, String fieldName) {
-        if (typedNumber(spinner) != null && spinner.getModel() instanceof SpinnerNumberModel m) {
+    /** Số nguyên người dùng gõ nằm ngoài khoảng của spinner: nêu khoảng cho phép. */
+    private static String outOfRangeMessage(JSpinner spinner, String fieldName) {
+        if (spinner.getModel() instanceof SpinnerNumberModel m) {
             return fieldName + " phải từ " + m.getMinimum() + " đến " + m.getMaximum();
         }
-        return fieldName + " phải là số nguyên";
+        return fieldName + " không hợp lệ";
     }
 
-    /** @return số nguyên người dùng đang gõ trong ô (kể cả ngoài khoảng), hoặc null nếu không phải số */
-    private static Long typedNumber(JSpinner spinner) {
-        String typed = spinner.getEditor() instanceof JSpinner.DefaultEditor editor
+    /** @return chữ đang có trong ô (kể cả chưa nhấn Enter), đã bỏ khoảng trắng hai đầu */
+    private static String typedText(JSpinner spinner) {
+        return spinner.getEditor() instanceof JSpinner.DefaultEditor editor
                 ? editor.getTextField().getText().trim() : "";
-        return typed.matches("-?\\d{1,9}") ? Long.valueOf(typed) : null;
     }
 
     private static String ruleSuffix(String rule) {

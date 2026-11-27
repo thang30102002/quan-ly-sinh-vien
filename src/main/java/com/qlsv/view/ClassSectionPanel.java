@@ -95,7 +95,7 @@ public class ClassSectionPanel extends JPanel {
     private JPanel buildSectionArea() {
         txtSectionCode.setToolTipText("<mã học phần>-<2 chữ số>, ví dụ IT101-01 (BR-24)");
         spnMaxStudents.setToolTipText("Số nguyên lớn hơn 0 (BR-25)");
-        UiStyles.keepTypedTextOnFocusLost(spnMaxStudents);
+        UiStyles.setupNumberSpinner(spnMaxStudents);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createTitledBorder("Thông tin lớp học phần"));
@@ -127,7 +127,7 @@ public class ClassSectionPanel extends JPanel {
     private JPanel buildScheduleArea() {
         spnStartPeriod.setToolTipText("Tiết 1–12; tiết 1–6 buổi sáng, 7–12 buổi chiều (BR-21)");
         spnEndPeriod.setToolTipText("Không nhỏ hơn tiết bắt đầu (BR-21)");
-        UiStyles.keepTypedTextOnFocusLost(spnStartPeriod, spnEndPeriod);
+        UiStyles.setupNumberSpinner(spnStartPeriod, spnEndPeriod);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createTitledBorder("Thông tin buổi học"));

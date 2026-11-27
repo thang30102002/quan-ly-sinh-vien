@@ -51,7 +51,7 @@ public class CoursePanel extends JPanel {
     private JPanel buildForm() {
         txtCourseCode.setToolTipText("2–4 chữ in hoa + 3 chữ số, ví dụ IT101 (BR-02)");
         spnCredits.setToolTipText("Số nguyên từ 1 đến 6 (BR-18)");
-        UiStyles.keepTypedTextOnFocusLost(spnCredits);
+        UiStyles.setupNumberSpinner(spnCredits);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
 

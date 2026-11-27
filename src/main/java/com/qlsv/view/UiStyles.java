@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.math.BigInteger;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
@@ -18,11 +20,14 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
+import javax.swing.text.DefaultFormatter;
+import javax.swing.text.DefaultFormatterFactory;
 
 /**
  * Kiểu dáng và định dạng dùng chung cho các Panel.
@@ -49,23 +54,70 @@ public final class UiStyles {
     }
 
     /**
-     * Khi ô số mất focus mà chữ đang gõ không hợp lệ (ngoài khoảng, không phải số), giữ
-     * nguyên chữ đó thay vì lặng lẽ trả về giá trị cũ. Mặc định của Swing (COMMIT_OR_REVERT)
-     * làm gõ 7 tín chỉ rồi bấm Thêm thì lưu luôn giá trị cũ mà không báo lỗi (#10).
-     * Controller đọc ô qua FormInputs.readInt sẽ báo lỗi khoảng cho phép.
-     * Gọi sau {@link JSpinner#setEditor} nếu có đổi editor.
+     * Cài đặt ô nhập số nguyên có {@link SpinnerNumberModel} (#10):
+     * <ul>
+     * <li>Chỉ nhận chữ là số nguyên viết liền trong khoảng của model, giống nhau trên mọi
+     *     ngôn ngữ máy. Bộ đọc mặc định của Swing đọc theo ngôn ngữ máy và cắt phần lẻ:
+     *     "3,5" (máy tiếng Việt) hay "3.5" (máy tiếng Anh) thành 3, "3a" thành 3.</li>
+     * <li>Hiện số liền, không dấu phân cách hàng nghìn (máy tiếng Việt hiện 1000 thành
+     *     "1.000").</li>
+     * <li>Khi ô mất focus mà chữ không hợp lệ thì giữ nguyên chữ đó (COMMIT) thay vì lặng lẽ
+     *     trả về giá trị cũ (mặc định COMMIT_OR_REVERT làm gõ 7 tín chỉ rồi bấm Thêm thì lưu
+     *     luôn giá trị cũ). Controller đọc ô qua FormInputs.readInt sẽ báo lỗi.</li>
+     * </ul>
      */
-    public static void keepTypedTextOnFocusLost(JSpinner... spinners) {
+    public static void setupNumberSpinner(JSpinner... spinners) {
         for (JSpinner spinner : spinners) {
-            if (spinner.getEditor() instanceof JSpinner.DefaultEditor editor) {
-                editor.getTextField().setFocusLostBehavior(JFormattedTextField.COMMIT);
+            spinner.setEditor(new JSpinner.NumberEditor(spinner, "#"));
+            if (spinner.getEditor() instanceof JSpinner.DefaultEditor editor
+                    && spinner.getModel() instanceof SpinnerNumberModel model) {
+                JFormattedTextField field = editor.getTextField();
+                field.setFormatterFactory(new DefaultFormatterFactory(new IntegerTextFormatter(model)));
+                field.setFocusLostBehavior(JFormattedTextField.COMMIT);
+                field.setValue(spinner.getValue());
             }
+        }
+    }
+
+    /** Đọc/hiện số nguyên dạng "-?chữ số", kiểm tra khoảng theo model; không theo ngôn ngữ máy. */
+    private static final class IntegerTextFormatter extends DefaultFormatter {
+
+        private final SpinnerNumberModel model;
+
+        IntegerTextFormatter(SpinnerNumberModel model) {
+            this.model = model;
+            setValueClass(Integer.class);
+            setCommitsOnValidEdit(false);
+            setOverwriteMode(false);
+        }
+
+        @Override
+        public Object stringToValue(String text) throws ParseException {
+            String t = text == null ? "" : text.trim();
+            if (!t.matches("-?\\d+")) {
+                throw new ParseException(text, 0);
+            }
+            BigInteger n = new BigInteger(t);
+            if (n.compareTo(bound(model.getMinimum(), Integer.MIN_VALUE)) < 0
+                    || n.compareTo(bound(model.getMaximum(), Integer.MAX_VALUE)) > 0) {
+                throw new ParseException(text, 0);
+            }
+            return n.intValue();
+        }
+
+        @Override
+        public String valueToString(Object value) {
+            return value == null ? "" : value.toString();
+        }
+
+        private static BigInteger bound(Comparable<?> limit, int fallback) {
+            return BigInteger.valueOf(limit instanceof Number n ? n.longValue() : fallback);
         }
     }
 
     /**
      * Gán giá trị cho ô số và hiển thị lại đúng giá trị đó. Cần thiết vì sau
-     * {@link #keepTypedTextOnFocusLost} ô có thể còn chữ sai (vd "7") trong khi giá trị
+     * {@link #setupNumberSpinner} ô có thể còn chữ sai (vd "7") trong khi giá trị
      * vẫn là 3; {@code setValue(3)} khi đó không đổi gì nên chữ "7" không mất.
      */
     public static void setSpinnerValue(JSpinner spinner, int value) {
