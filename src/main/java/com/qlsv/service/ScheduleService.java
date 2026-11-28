@@ -5,21 +5,27 @@ import static com.qlsv.service.ServiceSupport.isForeignKeyViolation;
 import static com.qlsv.service.ServiceSupport.isUniqueViolation;
 import static com.qlsv.service.ServiceSupport.trimToNull;
 
+import com.qlsv.dao.EnrollmentDAO;
+import com.qlsv.dao.EnrollmentDAOImpl;
 import com.qlsv.dao.ScheduleDAO;
 import com.qlsv.dao.ScheduleDAOImpl;
 import com.qlsv.exception.BusinessException;
 import com.qlsv.exception.ValidationException;
+import com.qlsv.model.Enrollment;
 import com.qlsv.model.Schedule;
+import com.qlsv.model.Student;
 
 import java.sql.SQLException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * Quy tắc nghiệp vụ của buổi học trong thời khóa biểu lớp học phần (BR-21).
+ * Quy tắc nghiệp vụ của buổi học trong thời khóa biểu lớp học phần (BR-21, BR-23).
  * Lớp mới mở có thể chưa có buổi nào; khi đã có thì không xóa được buổi cuối cùng,
- * nên lớp luôn còn ít nhất 1 buổi. BR-23 (trùng lịch với sinh viên đã đăng ký) làm ở #11.
- * Không chứa câu SQL nào: mọi truy cập CSDL đi qua {@link ScheduleDAO}.
+ * nên lớp luôn còn ít nhất 1 buổi.
+ * Không chứa câu SQL nào: mọi truy cập CSDL đi qua {@link ScheduleDAO} và {@link EnrollmentDAO}.
  */
 public class ScheduleService {
 
@@ -30,21 +36,27 @@ public class ScheduleService {
     static final int ROOM_MAX_LENGTH = 20;
 
     private final ScheduleDAO scheduleDAO;
+    private final EnrollmentDAO enrollmentDAO;
 
     public ScheduleService() {
-        this(new ScheduleDAOImpl());
+        this(new ScheduleDAOImpl(), new EnrollmentDAOImpl());
     }
 
     /** Cho phép truyền DAO khác, ví dụ DAO giả trong test. */
     public ScheduleService(ScheduleDAO scheduleDAO) {
+        this(scheduleDAO, null);
+    }
+
+    public ScheduleService(ScheduleDAO scheduleDAO, EnrollmentDAO enrollmentDAO) {
         this.scheduleDAO = Objects.requireNonNull(scheduleDAO, "scheduleDAO");
+        this.enrollmentDAO = enrollmentDAO;
     }
 
     /**
      * Thêm buổi học cho lớp học phần.
      *
      * @throws ValidationException thứ, tiết sai hoặc thiếu lớp (BR-21)
-     * @throws BusinessException   trùng với buổi khác của cùng lớp (BR-21) hoặc lỗi CSDL
+     * @throws BusinessException   trùng với buổi khác của cùng lớp (BR-21), trùng lịch sinh viên (BR-23) hoặc lỗi CSDL
      */
     public void add(Schedule schedule) {
         requireSchedule(schedule);
@@ -53,6 +65,7 @@ public class ScheduleService {
 
         try {
             requireNoOverlap(schedule);
+            requireNoStudentScheduleConflict(schedule);
             scheduleDAO.insert(schedule);
         } catch (SQLException e) {
             throw translate(e, "thêm buổi học");
@@ -63,7 +76,7 @@ public class ScheduleService {
      * Sửa buổi học. Không chuyển buổi học sang lớp khác.
      *
      * @throws ValidationException thứ, tiết sai hoặc thiếu dữ liệu (BR-21)
-     * @throws BusinessException   không tìm thấy, đổi lớp, trùng buổi khác (BR-21) hoặc lỗi CSDL
+     * @throws BusinessException   không tìm thấy, đổi lớp, trùng buổi khác (BR-21), trùng lịch sinh viên (BR-23) hoặc lỗi CSDL
      */
     public void update(Schedule schedule) {
         requireSchedule(schedule);
@@ -82,6 +95,7 @@ public class ScheduleService {
                 throw new BusinessException("Không chuyển được buổi học sang lớp học phần khác");
             }
             requireNoOverlap(schedule);
+            requireNoStudentScheduleConflict(schedule);
             if (!scheduleDAO.update(schedule)) {
                 throw notFound(schedule.getId());
             }
@@ -134,6 +148,67 @@ public class ScheduleService {
                         + " trùng với buổi đã có của lớp: " + other + " (BR-21)");
             }
         }
+    }
+
+    private void requireNoStudentScheduleConflict(Schedule schedule) throws SQLException {
+        if (enrollmentDAO == null) {
+            return;
+        }
+        int sectionId = schedule.getSection().getId();
+        List<Enrollment> enrollments = enrollmentDAO.findBySection(sectionId);
+        if (enrollments.isEmpty()) {
+            return;
+        }
+        Integer semesterId = resolveSemesterId(schedule, enrollments);
+        if (semesterId == null) {
+            return;
+        }
+        Set<String> conflictedStudents = new LinkedHashSet<>();
+        for (Enrollment enrollment : enrollments) {
+            Student student = enrollment.getStudent();
+            if (student == null || student.getId() == null) {
+                continue;
+            }
+            List<Schedule> studentSchedules =
+                    enrollmentDAO.findSchedulesByStudentAndSemester(student.getId(), semesterId);
+            for (Schedule other : studentSchedules) {
+                if (other.getSection() != null
+                        && Objects.equals(other.getSection().getId(), sectionId)) {
+                    continue;
+                }
+                if (schedule.overlaps(other)) {
+                    conflictedStudents.add(formatStudent(student));
+                    break;
+                }
+            }
+        }
+        if (!conflictedStudents.isEmpty()) {
+            throw new BusinessException("Buổi học " + describe(schedule)
+                    + " làm trùng lịch của sinh viên: "
+                    + String.join(", ", conflictedStudents) + " (BR-23)");
+        }
+    }
+
+    private static Integer resolveSemesterId(Schedule schedule, List<Enrollment> enrollments) {
+        if (schedule.getSection().getSemester() != null
+                && schedule.getSection().getSemester().getId() != null) {
+            return schedule.getSection().getSemester().getId();
+        }
+        for (Enrollment enrollment : enrollments) {
+            if (enrollment.getSection() != null
+                    && enrollment.getSection().getSemester() != null
+                    && enrollment.getSection().getSemester().getId() != null) {
+                return enrollment.getSection().getSemester().getId();
+            }
+        }
+        return null;
+    }
+
+    private static String formatStudent(Student student) {
+        if (student.getFullName() != null && !student.getFullName().isBlank()) {
+            return student.getStudentCode() + " - " + student.getFullName();
+        }
+        return student.getStudentCode() != null ? student.getStudentCode() : "#" + student.getId();
     }
 
     private static void requireSchedule(Schedule schedule) {
