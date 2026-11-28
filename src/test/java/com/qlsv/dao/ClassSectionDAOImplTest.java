@@ -240,6 +240,59 @@ class ClassSectionDAOImplTest {
         assertThrows(SQLException.class, () -> scheduleDAO.insert(new Schedule(section, 9, 1, 3, null)));
     }
 
+    // ---------- bổ sung ở #10 ----------
+
+    /** ScheduleService đổi lỗi này thành thông báo BR-21, nên phải đúng mã 23505. */
+    @Test
+    void schedule_trungThuVaTietBatDau_csdlChanUqSchedulesSlot() throws SQLException {
+        Course course = insertCourse("ZY901");
+        Semester semester = insertSemester("2098-1");
+        ClassSection section = new ClassSection("ZY901-01", course, semester, null, 40);
+        sectionDAO.insert(section);
+        scheduleDAO.insert(new Schedule(section, 2, 1, 3, null));
+
+        SQLException ex = assertThrows(SQLException.class,
+                () -> scheduleDAO.insert(new Schedule(section, 2, 1, 2, null)));
+        assertEquals("23505", ex.getSQLState());
+        assertTrue(ex.getMessage().contains("uq_schedules_slot"));
+    }
+
+    @Test
+    void schedule_findById_khongCo_traVeNull() throws SQLException {
+        assertNull(scheduleDAO.findById(-1));
+    }
+
+    @Test
+    void course_search_kyTuPhanTramTrongTen_timDungChuoi() throws SQLException {
+        courseDAO.insert(new Course("ZY901", "Thực tập 100% doanh nghiệp", 3, null));
+        courseDAO.insert(new Course("ZY902", "Thực tập 1000 giờ", 3, null));
+
+        List<Course> found = courseDAO.search("100%");
+        assertEquals(1, found.size());
+        assertEquals("ZY901", found.get(0).getCourseCode());
+    }
+
+    @Test
+    void course_findAll_sapTheoMa() throws SQLException {
+        insertCourse("ZY903");
+        insertCourse("ZY901");
+        insertCourse("ZY902");
+
+        List<String> codes = courseDAO.findAll().stream().map(Course::getCourseCode)
+                .filter(c -> c.startsWith("ZY9")).toList();
+        assertEquals(List.of("ZY901", "ZY902", "ZY903"), codes);
+    }
+
+    @Test
+    void semester_findAll_moiNhatTruoc() throws SQLException {
+        semesterDAO.insert(new Semester("2098-1", "HK1", LocalDate.of(2098, 9, 1), LocalDate.of(2099, 1, 15), false));
+        semesterDAO.insert(new Semester("2098-2", "HK2", LocalDate.of(2099, 2, 1), LocalDate.of(2099, 6, 30), false));
+
+        List<String> codes = semesterDAO.findAll().stream().map(Semester::getSemesterCode)
+                .filter(c -> c.startsWith("2098-")).toList();
+        assertEquals(List.of("2098-2", "2098-1"), codes);
+    }
+
     // ---------- tiện ích ----------
 
     private Course insertCourse(String code) throws SQLException {

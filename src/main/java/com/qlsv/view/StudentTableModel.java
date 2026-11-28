@@ -5,10 +5,6 @@ import com.qlsv.model.Student;
 import com.qlsv.model.StudentStatus;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.table.AbstractTableModel;
 
 /**
  * Dữ liệu cho bảng danh sách sinh viên. Bảng chỉ để xem, sửa thông tin qua form.
@@ -16,7 +12,7 @@ import javax.swing.table.AbstractTableModel;
  * Ngày sinh trả về {@link LocalDate} để sắp xếp đúng theo thời gian; giới tính và
  * trạng thái trả về enum, khi hiển thị ra nhãn tiếng Việt qua {@code toString()}.
  */
-public class StudentTableModel extends AbstractTableModel {
+public class StudentTableModel extends ListTableModel<Student> {
 
     public static final int COL_CODE = 0;
     public static final int COL_FULL_NAME = 1;
@@ -37,53 +33,12 @@ public class StudentTableModel extends AbstractTableModel {
         Integer.class, String.class, String.class, StudentStatus.class
     };
 
-    private final List<Student> students = new ArrayList<>();
-
-    /** Thay toàn bộ dữ liệu của bảng. Danh sách truyền vào được sao chép lại. */
-    public void setStudents(List<Student> list) {
-        students.clear();
-        if (list != null) {
-            students.addAll(list);
-        }
-        fireTableDataChanged();
-    }
-
-    /**
-     * @param modelRow chỉ số dòng trong model; nếu lấy từ JTable thì đổi bằng
-     *                 {@code table.convertRowIndexToModel(viewRow)} trước
-     */
-    public Student getStudentAt(int modelRow) {
-        return students.get(modelRow);
+    public StudentTableModel() {
+        super(COLUMN_NAMES, COLUMN_CLASSES);
     }
 
     @Override
-    public int getRowCount() {
-        return students.size();
-    }
-
-    @Override
-    public int getColumnCount() {
-        return COLUMN_NAMES.length;
-    }
-
-    @Override
-    public String getColumnName(int column) {
-        return COLUMN_NAMES[column];
-    }
-
-    @Override
-    public Class<?> getColumnClass(int column) {
-        return COLUMN_CLASSES[column];
-    }
-
-    @Override
-    public boolean isCellEditable(int row, int column) {
-        return false;
-    }
-
-    @Override
-    public Object getValueAt(int row, int column) {
-        Student s = students.get(row);
+    protected Object valueAt(Student s, int column) {
         return switch (column) {
             case COL_CODE -> s.getStudentCode();
             case COL_FULL_NAME -> s.getFullName();

@@ -95,6 +95,7 @@ public class ClassSectionPanel extends JPanel {
     private JPanel buildSectionArea() {
         txtSectionCode.setToolTipText("<mã học phần>-<2 chữ số>, ví dụ IT101-01 (BR-24)");
         spnMaxStudents.setToolTipText("Số nguyên lớn hơn 0 (BR-25)");
+        UiStyles.setupNumberSpinner(spnMaxStudents);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createTitledBorder("Thông tin lớp học phần"));
@@ -126,6 +127,7 @@ public class ClassSectionPanel extends JPanel {
     private JPanel buildScheduleArea() {
         spnStartPeriod.setToolTipText("Tiết 1–12; tiết 1–6 buổi sáng, 7–12 buổi chiều (BR-21)");
         spnEndPeriod.setToolTipText("Không nhỏ hơn tiết bắt đầu (BR-21)");
+        UiStyles.setupNumberSpinner(spnStartPeriod, spnEndPeriod);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createTitledBorder("Thông tin buổi học"));
@@ -219,7 +221,7 @@ public class ClassSectionPanel extends JPanel {
     public void clearSectionForm() {
         txtSectionCode.setText("");
         txtLecturer.setText("");
-        spnMaxStudents.setValue(40);
+        UiStyles.setSpinnerValue(spnMaxStudents, 40);
         if (cboCourse.getItemCount() > 0) {
             cboCourse.setSelectedIndex(0);
         }
@@ -234,13 +236,13 @@ public class ClassSectionPanel extends JPanel {
         selectCourse(s.getCourse());
         txtSectionCode.setText(s.getSectionCode());
         txtLecturer.setText(s.getLecturerName() != null ? s.getLecturerName() : "");
-        spnMaxStudents.setValue(s.getMaxStudents());
+        UiStyles.setSpinnerValue(spnMaxStudents, s.getMaxStudents());
     }
 
     public void clearScheduleForm() {
         cboDay.setSelectedIndex(0);
-        spnStartPeriod.setValue(1);
-        spnEndPeriod.setValue(3);
+        UiStyles.setSpinnerValue(spnStartPeriod, 1);
+        UiStyles.setSpinnerValue(spnEndPeriod, 3);
         txtRoom.setText("");
         tblSchedules.clearSelection();
     }
@@ -251,8 +253,8 @@ public class ClassSectionPanel extends JPanel {
             return;
         }
         cboDay.setSelectedIndex(s.getDayOfWeek() - FIRST_DAY);
-        spnStartPeriod.setValue(s.getStartPeriod());
-        spnEndPeriod.setValue(s.getEndPeriod());
+        UiStyles.setSpinnerValue(spnStartPeriod, s.getStartPeriod());
+        UiStyles.setSpinnerValue(spnEndPeriod, s.getEndPeriod());
         txtRoom.setText(s.getRoom() != null ? s.getRoom() : "");
     }
 

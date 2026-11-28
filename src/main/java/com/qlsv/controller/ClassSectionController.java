@@ -12,14 +12,10 @@ import com.qlsv.service.ScheduleService;
 import com.qlsv.service.SemesterService;
 import com.qlsv.view.ClassSectionPanel;
 import com.qlsv.view.ClassSectionTableModel;
-import com.qlsv.view.ListTableModel;
 import com.qlsv.view.ScheduleTableModel;
 
 import java.util.List;
 import java.util.Objects;
-
-import javax.swing.JOptionPane;
-import javax.swing.JTable;
 
 /**
  * Xử lý sự kiện của {@link ClassSectionPanel}: chọn học kỳ, thêm/sửa/xóa lớp học phần
@@ -148,7 +144,7 @@ public class ClassSectionController {
     // ---------------------------------------------------------------- lớp học phần
 
     public void onSectionSelected() {
-        ClassSection s = selectedRow(view.getTblSections(), sectionModel);
+        ClassSection s = sectionModel.getSelectedItem(view.getTblSections());
         if (s == null) {
             return;
         }
@@ -200,10 +196,8 @@ public class ClassSectionController {
             return;
         }
         ClassSection s = selectedSection;
-        int confirm = dialogs.showConfirm(view,
-                "Bạn có chắc chắn muốn xóa lớp " + s + " cùng toàn bộ buổi học của lớp?",
-                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (!dialogs.confirmDelete(view,
+                "Bạn có chắc chắn muốn xóa lớp " + s + " cùng toàn bộ buổi học của lớp?")) {
             return;
         }
         try {
@@ -218,7 +212,7 @@ public class ClassSectionController {
     // ---------------------------------------------------------------- buổi học
 
     public void onScheduleSelected() {
-        Schedule s = selectedRow(view.getTblSchedules(), scheduleModel);
+        Schedule s = scheduleModel.getSelectedItem(view.getTblSchedules());
         if (s == null) {
             return;
         }
@@ -248,24 +242,24 @@ public class ClassSectionController {
             return;
         }
         try {
-            scheduleService.update(readScheduleForm(selectedScheduleId));
+            int id = selectedScheduleId;
+            scheduleService.update(readScheduleForm(id));
             info("Cập nhật buổi học thành công!");
             loadSchedules();
-            selectedScheduleId = null;
+            // tải lại bảng làm JTable bỏ chọn; chọn lại để sửa tiếp được (#10)
+            scheduleModel.selectFirst(view.getTblSchedules(), s -> s.getId() == id);
         } catch (ValidationException | BusinessException ex) {
             error(ex.getMessage());
         }
     }
 
     public void onDeleteSchedule() {
-        Schedule s = selectedRow(view.getTblSchedules(), scheduleModel);
+        Schedule s = scheduleModel.getSelectedItem(view.getTblSchedules());
         if (selectedSection == null || s == null) {
             warning("Vui lòng chọn một buổi học từ bảng để xóa!");
             return;
         }
-        int confirm = dialogs.showConfirm(view, "Bạn có chắc chắn muốn xóa buổi học " + s + "?",
-                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (!dialogs.confirmDelete(view, "Bạn có chắc chắn muốn xóa buổi học " + s + "?")) {
             return;
         }
         try {
@@ -298,14 +292,18 @@ public class ClassSectionController {
         if (course == null) {
             throw new ValidationException("Chưa chọn học phần cho lớp, hãy thêm học phần ở tab Học phần");
         }
-        int max = FormInputs.readInt(view.getSpnMaxStudents(), "Sĩ số tối đa");
+        // mã lớp, sĩ số tối đa có dấu * trên form
+        FormInputs.requireFilled(view.getTxtSectionCode().getText(), FormInputs.text(view.getSpnMaxStudents()));
+        int max = FormInputs.readPositiveInt(view.getSpnMaxStudents(), "Sĩ số tối đa", "BR-25");
         return new ClassSection(view.getTxtSectionCode().getText(), course, semester,
                 view.getTxtLecturer().getText(), max);
     }
 
     private Schedule readScheduleForm(Integer id) {
-        int start = FormInputs.readInt(view.getSpnStartPeriod(), "Tiết bắt đầu");
-        int end = FormInputs.readInt(view.getSpnEndPeriod(), "Tiết kết thúc");
+        // tiết bắt đầu, tiết kết thúc có dấu * trên form (thứ là danh sách chọn)
+        FormInputs.requireFilled(FormInputs.text(view.getSpnStartPeriod()), FormInputs.text(view.getSpnEndPeriod()));
+        int start = FormInputs.readInt(view.getSpnStartPeriod(), "Tiết bắt đầu", "BR-21");
+        int end = FormInputs.readInt(view.getSpnEndPeriod(), "Tiết kết thúc", "BR-21");
         Schedule s = new Schedule(selectedSection, view.getSelectedDayOfWeek(), start, end,
                 view.getTxtRoom().getText());
         s.setId(id);
@@ -314,14 +312,8 @@ public class ClassSectionController {
 
     /** Chọn lại dòng của lớp có id này trong bảng (sau khi thêm hoặc sửa). */
     private void selectSection(Integer id) {
-        JTable table = view.getTblSections();
-        for (int row = 0; row < sectionModel.getRowCount(); row++) {
-            if (sectionModel.getItemAt(row).getId().equals(id)) {
-                int viewRow = table.convertRowIndexToView(row);
-                table.setRowSelectionInterval(viewRow, viewRow);
-                onSectionSelected();
-                return;
-            }
+        if (sectionModel.selectFirst(view.getTblSections(), s -> s.getId().equals(id))) {
+            onSectionSelected();
         }
     }
 
@@ -334,20 +326,15 @@ public class ClassSectionController {
         scheduleModel.setItems(List.of());
     }
 
-    private static <T> T selectedRow(JTable table, ListTableModel<T> model) {
-        int viewRow = table.getSelectedRow();
-        return viewRow >= 0 ? model.getItemAt(table.convertRowIndexToModel(viewRow)) : null;
-    }
-
     private void info(String message) {
-        dialogs.showMessage(view, message, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        dialogs.info(view, message);
     }
 
     private void warning(String message) {
-        dialogs.showMessage(view, message, "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+        dialogs.warning(view, message);
     }
 
     private void error(String message) {
-        dialogs.showMessage(view, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        dialogs.error(view, message);
     }
 }

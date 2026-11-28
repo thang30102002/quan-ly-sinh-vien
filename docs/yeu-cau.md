@@ -114,9 +114,9 @@ Phần mềm tự chuyển mã sang chữ in hoa và bỏ khoảng trắng hai �
 
 | Mã | Quy tắc |
 |---|---|
-| **BR-17** | Họ tên: bắt buộc, tối đa 100 ký tự. Email (nếu nhập): đúng định dạng email. Số điện thoại (nếu nhập): 10 chữ số, bắt đầu bằng `0`. Ngày sinh: sinh viên phải đủ 16 tuổi trở lên. |
+| **BR-17** | Họ tên: bắt buộc, tối đa 100 ký tự. Email (nếu nhập): đúng định dạng email. Số điện thoại (nếu nhập): 10 chữ số, bắt đầu bằng `0`. Ngày sinh: sinh viên phải đủ 16 tuổi trở lên; nhập dạng `dd/MM/yyyy`, năm từ 1900 đến 2100. |
 | **BR-18** | Số tín chỉ của học phần là số nguyên từ 1 đến 6. |
-| **BR-19** | Ngày kết thúc học kỳ phải sau ngày bắt đầu. |
+| **BR-19** | Ngày kết thúc học kỳ phải sau ngày bắt đầu. Ngày bắt đầu, kết thúc nhập dạng `dd/MM/yyyy`, năm từ 1900 đến 2100. |
 | **BR-20** | Trạng thái sinh viên là một trong các giá trị: *Đang học*, *Bảo lưu*, *Thôi học*, *Tốt nghiệp*. |
 
 ### 4.6. Lớp học phần, thời khóa biểu và trùng lịch

@@ -15,7 +15,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.LocalDate;
 import java.time.Year;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -38,8 +37,8 @@ import javax.swing.table.TableColumnModel;
 
 public class StudentPanel extends JPanel {
 
-    public static final String DATE_PATTERN = "dd/MM/yyyy";
-    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
+    /** Mục đầu của bộ lọc lớp, nghĩa là không lọc theo lớp. */
+    public static final String ALL_CLASSES = "Tất cả các lớp";
 
     private static final int FIELD_COLUMNS = 12;
 
@@ -86,7 +85,7 @@ public class StudentPanel extends JPanel {
         super(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        cboClassFilter.addItem("Tất cả các lớp");
+        cboClassFilter.addItem(ALL_CLASSES);
 
         add(buildForm(), BorderLayout.WEST);
         add(buildTable(), BorderLayout.CENTER);
@@ -94,8 +93,8 @@ public class StudentPanel extends JPanel {
     }
 
     private JPanel buildForm() {
-        spnIntakeYear.setEditor(new JSpinner.NumberEditor(spnIntakeYear, "#"));
-        txtDob.setToolTipText("Nhập theo dạng " + DATE_PATTERN + ", ví dụ 01/05/2006");
+        UiStyles.setupNumberSpinner(spnIntakeYear);
+        txtDob.setToolTipText("Nhập theo dạng " + UiStyles.DATE_PATTERN + ", ví dụ 01/05/2006");
         txtStudentCode.setToolTipText("Ví dụ SV2026001 (BR-01)");
         txtPhone.setToolTipText("10 chữ số, bắt đầu bằng 0 (BR-17)");
         spnIntakeYear.setToolTipText("Năm nhập học, trùng với 4 số sau SV trong mã (BR-01)");
@@ -200,7 +199,7 @@ public class StudentPanel extends JPanel {
         DefaultTableCellRenderer date = new DefaultTableCellRenderer() {
             @Override
             protected void setValue(Object value) {
-                setText(value instanceof LocalDate d ? DATE_FORMAT.format(d) : "");
+                setText(value instanceof LocalDate d ? UiStyles.DATE_FORMAT.format(d) : "");
             }
         };
         date.setHorizontalAlignment(SwingConstants.CENTER);
@@ -220,7 +219,7 @@ public class StudentPanel extends JPanel {
         txtEmail.setText("");
         txtPhone.setText("");
         txtClassName.setText("");
-        spnIntakeYear.setValue(Year.now().getValue());
+        UiStyles.setSpinnerValue(spnIntakeYear, Year.now().getValue());
         cboStatus.setSelectedItem(StudentStatus.STUDYING);
         tblStudents.clearSelection();
     }
@@ -233,19 +232,19 @@ public class StudentPanel extends JPanel {
         txtStudentCode.setText(s.getStudentCode());
         txtStudentCode.setEditable(false);
         txtFullName.setText(s.getFullName());
-        txtDob.setText(s.getDob() != null ? DATE_FORMAT.format(s.getDob()) : "");
+        txtDob.setText(s.getDob() != null ? UiStyles.DATE_FORMAT.format(s.getDob()) : "");
         cboGender.setSelectedItem(s.getGender());
         txtEmail.setText(s.getEmail() != null ? s.getEmail() : "");
         txtPhone.setText(s.getPhone() != null ? s.getPhone() : "");
         txtClassName.setText(s.getClassName() != null ? s.getClassName() : "");
-        spnIntakeYear.setValue(s.getIntakeYear());
+        UiStyles.setSpinnerValue(spnIntakeYear, s.getIntakeYear());
         cboStatus.setSelectedItem(s.getStatus());
     }
 
     public void updateClassFilter(List<String> classes) {
         String currentSelection = (String) cboClassFilter.getSelectedItem();
         cboClassFilter.removeAllItems();
-        cboClassFilter.addItem("Tất cả các lớp");
+        cboClassFilter.addItem(ALL_CLASSES);
         if (classes != null) {
             for (String c : classes) {
                 if (c != null && !c.isBlank()) {

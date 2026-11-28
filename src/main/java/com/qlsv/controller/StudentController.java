@@ -9,22 +9,17 @@ import com.qlsv.service.StudentService;
 import com.qlsv.view.StudentPanel;
 import com.qlsv.view.StudentTableModel;
 
-import java.awt.Component;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
+/**
+ * Xử lý sự kiện của {@link StudentPanel}: thêm, sửa, xóa, tìm kiếm sinh viên.
+ */
 public class StudentController {
-
-    public interface DialogHandler {
-        void showMessage(Component parent, Object message, String title, int messageType);
-        int showConfirm(Component parent, Object message, String title, int optionType);
-    }
 
     private final StudentPanel view;
     private final StudentService service;
@@ -32,17 +27,7 @@ public class StudentController {
     private Integer selectedStudentId = null;
     private boolean isUpdatingFilter = false;
 
-    private DialogHandler dialogHandler = new DialogHandler() {
-        @Override
-        public void showMessage(Component parent, Object message, String title, int messageType) {
-            JOptionPane.showMessageDialog(parent, message, title, messageType);
-        }
-
-        @Override
-        public int showConfirm(Component parent, Object message, String title, int optionType) {
-            return JOptionPane.showConfirmDialog(parent, message, title, optionType, JOptionPane.QUESTION_MESSAGE);
-        }
-    };
+    private DialogHandler dialogHandler = DialogHandler.swing();
 
     public StudentController(StudentPanel view, StudentService service) {
         this.view = Objects.requireNonNull(view, "view");
@@ -78,10 +63,8 @@ public class StudentController {
     }
 
     public void onRowSelected() {
-        int viewRow = view.getTblStudents().getSelectedRow();
-        if (viewRow >= 0) {
-            int modelRow = view.getTblStudents().convertRowIndexToModel(viewRow);
-            Student s = tableModel.getStudentAt(modelRow);
+        Student s = tableModel.getSelectedItem(view.getTblStudents());
+        if (s != null) {
             selectedStudentId = s.getId();
             view.setStudentToForm(s);
         } else {
@@ -90,31 +73,22 @@ public class StudentController {
     }
 
     private Student readStudentFromForm(boolean isNew) {
+        // mã SV, họ tên, ngày sinh, lớp sinh hoạt, khóa có dấu * trên form
+        // (giới tính, trạng thái là danh sách chọn, luôn có giá trị)
+        FormInputs.requireFilled(view.getTxtStudentCode().getText(), view.getTxtFullName().getText(),
+                view.getTxtDob().getText(), view.getTxtClassName().getText(),
+                FormInputs.text(view.getSpnIntakeYear()));
         String code = view.getTxtStudentCode().getText();
         String fullName = view.getTxtFullName().getText();
-        String dobStr = view.getTxtDob().getText().trim();
-        if (dobStr.isEmpty()) {
-            throw new ValidationException("Ngày sinh là bắt buộc (BR-17)");
-        }
-        LocalDate dob;
-        try {
-            dob = LocalDate.parse(dobStr, StudentPanel.DATE_FORMAT);
-        } catch (DateTimeParseException ex) {
-            throw new ValidationException("Ngày sinh không đúng định dạng " + StudentPanel.DATE_PATTERN + ", ví dụ 01/05/2006 (BR-17)");
-        }
+        LocalDate dob = FormInputs.readDate(view.getTxtDob().getText(), "Ngày sinh", "BR-17");
 
         Gender gender = (Gender) view.getCboGender().getSelectedItem();
         String email = view.getTxtEmail().getText();
         String phone = view.getTxtPhone().getText();
         String className = view.getTxtClassName().getText();
 
-        int intakeYear;
-        Object yearVal = view.getSpnIntakeYear().getValue();
-        if (yearVal instanceof Number num) {
-            intakeYear = num.intValue();
-        } else {
-            throw new ValidationException("Khóa (năm nhập học) không hợp lệ");
-        }
+        // commitEdit trong readInt: lấy cả năm vừa gõ mà chưa nhấn Enter (#10)
+        int intakeYear = FormInputs.readInt(view.getSpnIntakeYear(), "Khóa (năm nhập học)", "BR-01");
 
         StudentStatus status = (StudentStatus) view.getCboStatus().getSelectedItem();
 
@@ -132,7 +106,7 @@ public class StudentController {
         try {
             Student s = readStudentFromForm(true);
             service.add(s);
-            dialogHandler.showMessage(view, "Thêm sinh viên thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            dialogHandler.info(view, "Thêm sinh viên thành công!");
             view.clearForm();
             selectedStudentId = null;
             loadStudents();
@@ -151,8 +125,9 @@ public class StudentController {
         try {
             Student s = readStudentFromForm(false);
             service.update(s);
-            dialogHandler.showMessage(view, "Cập nhật sinh viên thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            loadStudents();
+            dialogHandler.info(view, "Cập nhật sinh viên thành công!");
+            // giữ điều kiện tìm kiếm và chọn lại dòng vừa sửa để sửa tiếp được (#10)
+            loadStudents(s.getId(), true);
         } catch (ValidationException | BusinessException ex) {
             showError(ex.getMessage());
         } catch (Exception ex) {
@@ -161,30 +136,23 @@ public class StudentController {
     }
 
     public void onDeleteStudent() {
-        int viewRow = view.getTblStudents().getSelectedRow();
-        if (viewRow < 0 || selectedStudentId == null) {
+        Student student = tableModel.getSelectedItem(view.getTblStudents());
+        if (student == null || selectedStudentId == null) {
             showWarning("Vui lòng chọn một sinh viên từ bảng để xóa!");
             return;
         }
-        int modelRow = view.getTblStudents().convertRowIndexToModel(viewRow);
-        Student student = tableModel.getStudentAt(modelRow);
-
-        int confirm = dialogHandler.showConfirm(
-            view,
-            "Bạn có chắc chắn muốn xóa sinh viên " + student.getFullName() + " (" + student.getStudentCode() + ")?",
-            "Xác nhận xóa",
-            JOptionPane.YES_NO_OPTION
-        );
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (!dialogHandler.confirmDelete(view, "Bạn có chắc chắn muốn xóa sinh viên "
+                + student.getFullName() + " (" + student.getStudentCode() + ")?")) {
             return;
         }
 
         try {
             StudentService.DeleteResult result = service.delete(student.getId());
             if (result == StudentService.DeleteResult.DELETED) {
-                dialogHandler.showMessage(view, "Đã xóa sinh viên thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                dialogHandler.info(view, "Đã xóa sinh viên thành công!");
             } else {
-                dialogHandler.showMessage(view, "Sinh viên đã có điểm nên không thể xóa hẳn. Trạng thái đã được chuyển sang \"Thôi học\" (BR-14).", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                dialogHandler.info(view, "Sinh viên đã có điểm nên không thể xóa hẳn."
+                        + " Trạng thái đã được chuyển sang \"Thôi học\" (BR-14).");
             }
             view.clearForm();
             selectedStudentId = null;
@@ -209,24 +177,45 @@ public class StudentController {
     }
 
     public void onSearch() {
-        String keyword = view.getTxtSearch().getText().trim();
-        String selectedClass = (String) view.getCboClassFilter().getSelectedItem();
-        if ("Tất cả các lớp".equals(selectedClass)) {
-            selectedClass = null;
-        }
-        String kw = keyword.isEmpty() ? null : keyword;
-        String cls = (selectedClass == null || selectedClass.isBlank()) ? null : selectedClass.trim();
-
         try {
-            List<Student> results = service.search(kw, cls);
-            tableModel.setStudents(results);
+            List<Student> results = service.search(searchKeyword(), selectedClassFilter());
+            tableModel.setItems(results);
             view.setStatusText("Tìm thấy " + results.size() + " sinh viên");
         } catch (Exception ex) {
             showError("Không tìm kiếm được sinh viên: " + ex.getMessage());
         }
     }
 
+    /** @return từ khóa đang nhập, hoặc null nếu để trống */
+    private String searchKeyword() {
+        String keyword = view.getTxtSearch().getText().trim();
+        return keyword.isEmpty() ? null : keyword;
+    }
+
+    /** @return lớp đang chọn ở bộ lọc, hoặc null nếu chọn "Tất cả các lớp" */
+    private String selectedClassFilter() {
+        String selectedClass = (String) view.getCboClassFilter().getSelectedItem();
+        if (selectedClass == null || selectedClass.isBlank() || StudentPanel.ALL_CLASSES.equals(selectedClass)) {
+            return null;
+        }
+        return selectedClass.trim();
+    }
+
+    /** Tải lại toàn bộ danh sách (như trước #10): dùng khi mở app, Thêm, Xóa, Làm mới. */
     public void loadStudents() {
+        loadStudents(null, false);
+    }
+
+    /**
+     * Tải lại danh sách ở luồng nền.
+     *
+     * @param selectId   id sinh viên cần chọn lại sau khi tải xong, hoặc null. Nếu sinh viên
+     *                   này không còn trong bảng thì xóa form để không còn dữ liệu cũ.
+     * @param keepSearch true: bảng vẫn theo từ khóa và bộ lọc lớp đang hiển thị (dùng sau
+     *                   khi Sửa; trước đây sửa xong bảng hiện lại toàn bộ dù ô tìm kiếm còn
+     *                   từ khóa, #10). false: hiện toàn bộ như trước.
+     */
+    private void loadStudents(Integer selectId, boolean keepSearch) {
         view.getBtnRefresh().setEnabled(false);
         view.setStatusText("Đang tải danh sách sinh viên...");
 
@@ -240,7 +229,6 @@ public class StudentController {
             protected void done() {
                 try {
                     List<Student> students = get();
-                    tableModel.setStudents(students);
                     List<String> classes = students.stream()
                             .map(Student::getClassName)
                             .filter(Objects::nonNull)
@@ -250,9 +238,23 @@ public class StudentController {
                             .sorted()
                             .toList();
                     isUpdatingFilter = true;
-                    view.updateClassFilter(classes);
-                    isUpdatingFilter = false;
-                    view.setStatusText("Đã tải " + students.size() + " sinh viên");
+                    try {
+                        view.updateClassFilter(classes);
+                    } finally {
+                        isUpdatingFilter = false;
+                    }
+                    // đọc điều kiện sau khi nạp lại bộ lọc: lớp đang lọc có thể không còn
+                    if (!keepSearch || (searchKeyword() == null && selectedClassFilter() == null)) {
+                        tableModel.setItems(students);
+                        view.setStatusText("Đã tải " + students.size() + " sinh viên");
+                    } else {
+                        onSearch();
+                    }
+                    if (selectId != null
+                            && !tableModel.selectFirst(view.getTblStudents(), s -> s.getId().equals(selectId))) {
+                        view.clearForm();
+                        selectedStudentId = null;
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     view.setStatusText("Đã hủy tải danh sách");
@@ -279,10 +281,10 @@ public class StudentController {
     }
 
     private void showError(String message) {
-        dialogHandler.showMessage(view, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        dialogHandler.error(view, message);
     }
 
     private void showWarning(String message) {
-        dialogHandler.showMessage(view, message, "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+        dialogHandler.warning(view, message);
     }
 }
